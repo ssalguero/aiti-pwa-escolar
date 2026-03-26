@@ -1,0 +1,1839 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#6C3FE8" />
+  <meta name="description" content="App educativa para 4to grado" />
+  <title>Edu Aiti 4</title>
+  
+  <link rel="manifest" href="manifest.json" />
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => console.log('¡App de Aiti lista!', reg))
+          .catch(err => console.log('Error en PWA:', err));
+      });
+    }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  
+  <style>
+    :root {
+      --mat:    #FF6B35; --len:    #3ECFCF; --soc:    #F7B731; --nat:    #4CD97B;
+      --rot:    #A259FF; --bg:     #0F0A2A; --card:   #1C1544; --card2:  #251D55;
+      --white:  #F0EEFF; --muted:  #8B82C4; --radius: 20px; --shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    
+    /* --- CLASES DE COLORES POR MATERIA --- */
+.c-mat { color: var(--mat); } 
+.bg-mat { background: rgba(255,107,53,0.15); border: 1px solid var(--mat); }
+
+.c-len { color: var(--len); } 
+.bg-len { background: rgba(62,207,207,0.15); border: 1px solid var(--len); }
+
+.c-soc { color: var(--soc); } 
+.bg-soc { background: rgba(247,183,49,0.15); border: 1px solid var(--soc); }
+
+.c-nat { color: var(--nat); } 
+.bg-nat { background: rgba(76,217,123,0.15); border: 1px solid var(--nat); }
+
+/* Esta es la nueva para los Exámenes */
+.bg-rot { background: rgba(162, 89, 255, 0.2); border: 1px solid var(--rot); color: white; }
+
+/* Estilo base para la etiqueta de materia en el juego */
+.subject-pill {
+  display: inline-block;
+  padding: 6px 16px;
+  border-radius: 50px;
+  font-weight: 800;
+  margin-bottom: 20px;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+	
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Nunito', sans-serif; background: var(--bg); color: var(--white); min-height: 100vh; overflow-x: hidden; }
+    #stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; background: radial-gradient(ellipse at 20% 50%, rgba(108,63,232,.15) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(62,207,207,.10) 0%, transparent 50%); }
+    #app { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; min-height: 100vh; padding: 0 0 80px; display: flex; flex-direction: column; }
+    
+    .header { padding: 20px 20px 12px; display: flex; align-items: center; justify-content: space-between; }
+    .logo { font-family: 'Fredoka One', cursive; font-size: 1.6rem; background: linear-gradient(135deg, #A259FF, #3ECFCF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .coins-badge { display: flex; align-items: center; gap: 6px; background: var(--card2); border: 2px solid var(--soc); border-radius: 50px; padding: 6px 14px; font-weight: 800; color: var(--soc); }
+
+    .screen { display: none; flex-direction: column; padding: 0 20px; flex: 1; animation: fadeIn .4s ease; }
+    .screen.active { display: flex; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+
+    .hero-title { font-family: 'Fredoka One', cursive; font-size: 2.8rem; line-height: 1.1; margin: 24px 0 8px; text-align: center; }
+    .hero-sub { text-align: center; color: var(--muted); margin-bottom: 28px; }
+
+    .level-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .level-card { background: var(--card); border-radius: var(--radius); padding: 18px; cursor: pointer; border: 2px solid transparent; text-align: center; transition: 0.2s; }
+    .level-card.locked { opacity: 0.5; cursor: not-allowed; }
+    .level-card.completed { border-color: var(--nat); }
+
+    .intro-subjects-list { margin: 20px 0; }
+    .question-card { background: var(--card); border-radius: var(--radius); padding: 22px; margin-bottom: 18px; border: 1.5px solid var(--card2); }
+    .options-grid { display: flex; flex-direction: column; gap: 10px; }
+    .option-btn { background: var(--card2); border: 2px solid transparent; border-radius: 14px; padding: 14px; color: white; font-weight: 700; cursor: pointer; text-align: left; }
+    
+    .sort-item { background: var(--card2); border: 2px solid var(--rot); border-radius: 12px; padding: 14px; margin-bottom: 8px; font-family: 'Fredoka One'; cursor: grab; }
+    
+    .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: rgba(15,10,42,0.95); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid var(--card2); }
+    .nav-btn { background: none; border: none; color: var(--muted); font-size: 0.8rem; cursor: pointer; display: flex; flex-direction: column; align-items: center; }
+    .nav-btn.active { color: var(--rot); }
+  </style>
+  
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+</head>
+<body>
+  <div id="stars"></div>
+  <div id="app">
+    <div class="header">
+      <div class="logo">⭐ EduAiti4</div>
+      <div class="coins-badge">🪙 <span id="coins-display">0</span></div>
+    </div>
+
+    <div class="screen active" id="screen-home">
+      <div class="hero-title">¡Hola,<br/>exploradora! 🚀</div>
+      <div class="hero-sub">Elegí un nivel para comenzar</div>
+      <div class="level-grid" id="levels-grid"></div>
+    </div>
+
+    <div class="screen" id="screen-intro">
+      <div id="intro-badge" style="margin-top:20px; color:var(--muted); font-weight:700;"></div>
+      <h1 id="intro-title" style="font-family:'Fredoka One'; margin: 10px 0;"></h1>
+      <div id="intro-subjects" class="intro-subjects-list"></div>
+      <button id="btn-start-level" style="width:100%; padding:16px; border-radius:14px; border:none; background:linear-gradient(135deg, #6C3FE8, #A259FF); color:white; font-family:'Fredoka One'; font-size:1.2rem; cursor:pointer;"></button>
+    </div>
+
+    <div class="screen" id="screen-game">
+      <div style="margin: 20px 0;">
+        <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:5px; color:var(--muted);">
+          <span id="progress-label"></span>
+          <span id="progress-pct">0%</span>
+        </div>
+        <div style="height:10px; background:var(--card2); border-radius:10px; overflow:hidden;">
+          <div id="progress-fill" style="height:100%; width:0%; background:linear-gradient(90deg, var(--rot), var(--len)); transition:0.3s;"></div>
+        </div>
+      </div>
+      <div id="subject-pill" style="display:inline-block; padding:5px 15px; border-radius:20px; font-weight:800; margin-bottom:15px; font-size:0.8rem;"></div>
+      <div class="question-card">
+        <div id="q-text" style="font-size:1.2rem; font-weight:700;"></div>
+      </div>
+      <div id="zone-mc" class="options-grid"></div>
+      <div id="zone-tf" style="display:none; grid-template-columns: 1fr 1fr; gap:10px;">
+        <button id="btn-true" onclick="answerTF('true')" style="padding:20px; border-radius:15px; border:none; background:var(--card2); color:white; font-family:'Fredoka One'; font-size:1.2rem; cursor:pointer;">✅ VERDADERO</button>
+        <button id="btn-false" onclick="answerTF('false')" style="padding:20px; border-radius:15px; border:none; background:var(--card2); color:white; font-family:'Fredoka One'; font-size:1.2rem; cursor:pointer;">❌ FALSO</button>
+      </div>
+      <div id="zone-fitb" style="display:none;">
+        <input type="text" id="fitb-input" style="width:100%; padding:15px; border-radius:10px; border:none; background:var(--card2); color:white; margin-bottom:10px;" placeholder="Escribí acá...">
+        <button id="btn-fitb" onclick="submitFITB()" style="width:100%; padding:15px; border-radius:10px; border:none; background:var(--rot); color:white; font-weight:800;">ENVIAR</button>
+      </div>
+      <div id="zone-sort" style="display:none;">
+        <div id="sort-list" class="sort-container"></div>
+        <button id="btn-sort" onclick="submitSort()" style="width:100%; padding:15px; border-radius:10px; border:none; background:var(--rot); color:white; font-weight:800; margin-top:10px;">REVISAR ORDEN</button>
+      </div>
+      <div id="feedback-panel" style="display:none; margin-top:15px; padding:15px; border-radius:10px; text-align:center; font-weight:800;"></div>
+      <button id="next-btn" style="display:none; width:100%; margin-top:15px; padding:15px; border-radius:10px; border:none; background:var(--white); color:var(--bg); font-weight:800;" onclick="nextQuestion()">SIGUIENTE →</button>
+    </div>
+
+    <div class="screen" id="screen-results" style="text-align:center; justify-content:center;">
+      <div style="font-size:5rem;">🏆</div>
+      <h1 id="result-title" style="font-family:'Fredoka One'; margin:10px 0;"></h1>
+      <div id="result-score" style="font-size:3rem; font-family:'Fredoka One'; color:var(--soc);"></div>
+      <p id="result-sub" style="margin-bottom:20px;"></p>
+      <button onclick="goHome()" style="width:100%; padding:15px; border-radius:10px; border:none; background:var(--rot); color:white; font-weight:800;">VOLVER AL INICIO</button>
+    </div>
+
+    <div class="screen" id="screen-profile" style="text-align:center; padding-top:40px;">
+      <div style="background:var(--card); padding:30px; border-radius:25px;">
+        <div style="font-size:4rem; margin-bottom:10px;">🧒</div>
+        <h2 style="font-family:'Fredoka One';">Aitana</h2>
+        <div style="font-size:2.5rem; color:var(--soc); font-family:'Fredoka One'; margin:15px 0;">🪙 <span id="stat-coins">0</span></div>
+        <p style="color:var(--muted);">¡Seguí así para ganar más estrellas!</p>
+      </div>
+    </div>
+
+    <nav class="bottom-nav">
+      <button class="nav-btn active" onclick="navTo('home')">🏠<br>Inicio</button>
+      <button class="nav-btn" onclick="navTo('profile')">👤<br>Perfil</button>
+    </nav>
+  </div>
+
+  <script>
+
+    /* --- CONFIGURACIÓN SUPABASE --- */
+    const SUPABASE_URL = 'https://abkxfzbbpqzdcvgknhyb.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFia3hmemJicHF6ZGN2Z2tuaHliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MzE1MDUsImV4cCI6MjA4OTAwNzUwNX0.g34kH1mphkSnJMDcwi6p5DfWjUAGcx__WtGv-A1-Obo';
+    
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);	
+
+    /* --- CONFIGURACIÓN Y ESTADO --- */
+    const state = { currentLevel: 1, coins: 0, completedLevels: [] };
+    const subjectMeta = {
+      matematica: { label: "Matemática", icon: "🔢", colorClass: "c-mat", bgClass: "bg-mat" },
+      lengua: { label: "Lengua", icon: "📚", colorClass: "c-len", bgClass: "bg-len" },
+      sociales: { label: "Sociales", icon: "🗺️", colorClass: "c-soc", bgClass: "bg-soc" },
+      naturales: { label: "Naturales", icon: "🌿", colorClass: "c-nat", bgClass: "bg-nat" }
+    };
+    const subjectsOrder = ['matematica', 'lengua', 'sociales', 'naturales'];
+    let currentIntroIndex = 0;
+    let questionQueue = [];
+    let currentQIndex = 0;
+
+    /* --- FUNCIONES DE BASE DE DATOS --- */
+    async function loadProgress() {
+      const { data, error } = await supabaseClient.from('user_progress').select('*').eq('id', 1).single();
+      if (data) {
+        state.coins = data.coins || 0;
+        state.completedLevels = data.completed_levels || [];
+        document.getElementById('coins-display').textContent = state.coins;
+        document.getElementById('stat-coins').textContent = state.coins;
+        renderLevels();
+      }
+    }
+    async function saveProgress() {
+      await supabaseClient.from('user_progress').update({ 
+        coins: state.coins, 
+        completed_levels: state.completedLevels,
+        updated_at: new Date() 
+      }).eq('id', 1);
+    }
+
+    /* --- CONTENIDO EDUCATIVO (NAP) --- */
+    const NAP_CONTENT = {
+1: {
+    matematica: { 
+      txt: "Este año empezamos a conocer números más grandes. Para ello necesitamos saber que existen las unidades de mil y las decenas de mil (10.000). ¡Cada posición cambia el valor!" },
+    lengua: { 
+      txt: "Los sustantivos: son palabaras que sirven para nombrar cosas, personas o lugares. Los comunes nombran en general: cosas, animales (como perro o escuela) y los propios nombran algo específico, nombres de personas, ciudades, paises (como 'Aitana' o 'La Plata'). Los sustantivos propios siempre empiezan con mayúscula mientras que los comunes con minúscula." },
+    sociales: { 
+      txt: "La división política de Argentina: Nuestro país esta dividido en 23 provincias y tiene ademas un territorio que es la Capital Federal (CABA)." },
+    naturales: { 
+      txt: "Los Reinos de la Naturaleza: Los seres vivos se agrupan en reinos según sus características (Animal, Vegetal, Protista o Fungi (Hongos) y Monera(Bacterias))." }
+  },
+2: {
+    matematica: { txt: "El valor posicional es el valor que tiene un número según el lugar donde está. Cada posición vale algo distinto: unidades, decenas, centenas, etc. Por ejemplo, en el número 345, el 3 vale 300, el 4 vale 40 y el 5 vale 5 ¡Parece dificil pero lo vamos a Intentar!." },
+    lengua: { txt: "Los adjetivos son palabras que sirven para describir cómo es una persona, animal o cosa. Nos dicen características como color, tamaño o forma. Por ejemplo: perro grande, casa roja o niña feliz." },
+    sociales: { txt: "En Argentina hay muchos recursos naturales, como el agua, los suelos fértiles, los bosques y los minerales. Estos recursos se usan para producir alimentos y energía, pero es muy importante cuidarlos para que sigan existiendo en el futuro." },
+    naturales: { txt: "Los seres vivos tienen adaptaciones que les ayudan a vivir mejor en su ambiente. Estas pueden ser del cuerpo (como patas para moverse o piel para protegerse) o de su forma de actuar (como vivir en grupo o cuidar a sus crías)."}
+},
+3: {
+    matematica: { 
+      txt: "Ahora usemos un poco la cabeza, aprenderemos estrategias para sumar, restar y multipicar números redondos (como 100, 500 o 1.000) de forma rápida usando la mente, ordenar los resultados y además podemos intentar hacer divisiones sencillas." },
+    lengua: { 
+      txt: "Se nos presentan dos nuevos tipos de palabras: los sinónimos y los antónimos. Los sinónimos son palabras que significan lo mismo (feliz/contento) y los antónimos son lo opuesto (frío/caliente). ¡Sirven para escribir mejor!" },
+    sociales: { 
+      txt: "Es importante reconocer los problemas ambientales, como la contaminación o la basura, que pueden ocurrir en nuestro barrio, provincia o región. Estos problemas afectan a las personas y a la naturaleza, por eso debemos conocerlos y ayudar a cuidarla. En Argentina existen áreas protegidas, como parques y reservas, que cuidan la naturaleza y los animales. Es importante conocerlas y valorarlas, porque ayudan a proteger el ambiente, en todo nuestro territorio. " },
+    naturales: { 
+      txt: "Las personas pueden cambiar el ambiente con sus acciones. Por eso es importante cuidarlo, para proteger la naturaleza y a todos los seres vivos, no solo podemos levantar papeles del suelo sino tambien volver a utilizar objetos que ya no se usan, es decir, darle un nuevo uso... Reciclar!!! " }
+  },
+4: {
+    matematica: { 
+      txt: "Ahora multiplicamos y repartimos con un poquito de ayuda. Usaremos las tablas para resolver problemas más rápido y aprenderemos a repartir cantidades en partes iguales." },
+    lengua: { 
+      txt: "La Leyenda: Son historias que cuentan el origen de algo (un animal, una planta) mezclando cosas reales con elementos fantásticos o mágicos." },
+    sociales: { 
+      txt: "En esta parte veremos los espacios rurales y urbanos. El campo es el espacio rural y la ciudad es el urbano. Los dos son bien diferentes. En el campo hay más naturaleza y en la ciudad hay más edificios y servicios." },
+    naturales: { 
+      txt: "El cuerpo humano tiene un sistema que nos permite mantenernos firmes y movernos, formado por huesos, músculos y articulaciones. Es importante cuidarlo con buena postura, ejercicio y alimentación para estar sanos." }
+  },
+5: {
+    matematica: { 
+      txt: "Tablas del 5, 6 y 7: Las tablas de multiplicar son una forma de sumar varias veces el mismo número de manera más rápida. Por ejemplo, en lugar de sumar 5 + 5 + 5, podemos decir 3 × 5. Las tablas del 5, 6 y 7 nos ayudan a resolver cuentas más rápido, reconocer patrones en los números y facilitar cálculos mentales. Aprenderlas también es importante para poder dividir y resolver problemas de la vida diaria, como repartir objetos o calcular cantidades." },
+    lengua: { 
+      txt: "El diccionario (uso práctico): El diccionario es una herramienta que nos permite buscar palabras para conocer su significado, cómo se escriben y cómo se usan. Las palabras están ordenadas alfabéticamente, lo que facilita encontrarlas. También puede indicar cómo se pronuncian o dar ejemplos. Usar el diccionario ayuda a mejorar la lectura, ampliar el vocabulario y escribir mejor." },
+    sociales: { 
+      txt: "Provincias Argentinas I: Argentina está formada por provincias, que son partes del país con su propio territorio y capital. Conocerlas nos ayuda a entender cómo está organizado el país y dónde viven las personas." },
+    naturales: { 
+      txt: "Animales vertebrados e invertebrados: Los animales se clasifican en vertebrados (tienen huesos y columna vertebral) e invertebrados (no tienen huesos). Esta clasificación nos ayuda a conocer mejor cómo son los seres vivos." }
+  },
+6: {
+    matematica: { 
+      txt: "Fracciones I (La parte y el todo): Las fracciones aparecen cuando necesitamos expresar cantidades que no están "enteras". Imaginá que tenés una tableta de chocolate y la cortás en 4 barritas iguales: cada una es un cuarto (1/4). El número de abajo (denominador) nos dice en cuántas partes cortamos el entero, y el de arriba (numerador) cuántas de esas partes tomamos. Las fracciones son súper útiles para repartir comida de forma justa, seguir una receta de cocina o medir el tiempo." },
+    lengua: { 
+      txt: "Reglas de acentuación (Agudas, Graves y Esdrújulas): Todas las palabras tienen una sílaba que suena más fuerte, como si tuviera "superpoderes": es la sílaba tónica. Según dónde esté ese golpe de voz, las clasificamos en Agudas (fuerza al final, como capitán), Graves (fuerza en la penúltima, como lápiz) o Esdrújulas (fuerza en la antepenúltima, como pájaro). Aprender cuándo llevan tilde nos ayuda a que los demás entiendan exactamente lo que queremos decir al escribir." },
+    sociales: { 
+      txt: "Provincias Argentinas II (Clima y Paisaje): Nuestro país es tan grande que tiene paisajes para todos los gustos. En el norte hace calor y hay selvas o desiertos; en el centro están las llanuras donde crece el trigo; y en el sur están los glaciares y las montañas con nieve. Cada provincia tiene un clima y un relieve que la hacen única. Conocer estas diferencias nos permite entender por qué las casas son distintas en cada lugar o por qué en algunas provincias se cultiva vid y en otras se crían ovejas." },
+    naturales: { 
+      txt: "Clasificación de Invertebrados: Los invertebrados son los animales más numerosos de la Tierra y, aunque no tienen huesos ni columna vertebral, ¡son asombrosos! Se dividen en grupos: los insectos (como las hormigas), los arácnidos (como las arañas de 8 patas), los moluscos (como el caracol con su casita a cuestas) y los crustáceos (como los cangrejos). Cada grupo desarrolló formas increíbles de protegerse, como caparazones o pinzas, para vivir en casi cualquier lugar del planeta." }
+  },
+7: {
+    matematica: { 
+      txt: "Figuras Geométricas (Lados y Vértices): Si mirás a tu alrededor, vas a ver que todo tiene forma. Las figuras geométricas son representaciones de esas formas. Las partes más importantes son los lados (las líneas derechitas) y los vértices (las "puntitas" donde se cruzan dos lados). Un triángulo tiene 3 de cada uno, mientras que un cuadrado tiene 4. Saber reconocer estas partes te permite ser una gran constructora y entender cómo se arman los objetos que usamos." },
+    lengua: { 
+      txt: "El punto y la mayúscula: Escribir es como hablar, pero en el papel necesitamos señales de tránsito para no chocarnos. La mayúscula es la señal de "¡Atención, aquí empiezo!" (se usa al iniciar una oración o en nombres propios como Aitana o Argentina). El punto es la señal de "¡Stop, aquí termina una idea!". Usarlos bien hace que tus textos sean fáciles de leer y que tus ideas brillen mucho más." },
+    sociales: { 
+      txt: "El mapa de mi provincia: Un mapa es como una foto sacada desde un avión muy alto, pero dibujada con símbolos. En el mapa de tu provincia podés ubicar dónde está tu ciudad, dónde hay ríos, montañas o rutas que nos conectan con otros lugares. Aprender a leer mapas es como tener un "superpoder" de orientación: te permite saber dónde estás parada y descubrir qué tan lejos o cerca están los lugares que querés visitar." },
+    naturales: { 
+      txt: "El ciclo de la vida: Todos los seres vivos, desde la plantita más chiquita hasta la ballena más grande, compartimos un camino: el ciclo de la vida. Este camino tiene etapas: nacemos, crecemos, nos reproducimos (tenemos hijos o semillas) y, finalmente, morimos. Este ciclo es maravilloso porque asegura que la vida nunca se detenga y que siempre haya nuevas generaciones de animales y plantas habitando nuestro mundo." }
+  },
+8: {
+    matematica: { 
+      txt: "Multiplicación por una cifra: Multiplicar es como tener una máquina de sumar súper rápida. En lugar de hacer 8 + 8 + 8 + 8 + 8, simplemente hacés 5 x 8. Multiplicar por una cifra es la base para resolver desafíos más grandes. Te sirve para saber cuánto vas a gastar en el kiosco si comprás varios alfajores iguales o para calcular cuántas figuritas tenés en varios paquetes sin tener que contarlas una por una." },
+    lengua: { 
+      txt: "Cuentos Maravillosos: Los cuentos maravillosos son puertas a mundos donde todo es posible. En ellos aparecen elementos mágicos (varitas, pócimas), personajes fantásticos (hadas, ogros, dragones) y lugares encantados. A diferencia de la realidad, en estos cuentos la magia es algo normal. Leerlos nos ayuda a entrenar nuestra imaginación y a entender historias que, aunque tienen mucha fantasía, siempre nos enseñan algo sobre la valentía o la amistad." },
+    sociales: { 
+      txt: "Autoridades Locales: Para que una ciudad funcione bien, necesita organización. Las autoridades locales son las personas elegidas para tomar decisiones que nos benefician a todos. El Intendente es quien lidera este equipo en el municipio. Ellos se ocupan de que funcionen los hospitales, de que las plazas estén lindas y de que los semáforos anden. Conocer quiénes son nos permite saber quiénes cuidan nuestro barrio y cómo podemos colaborar con ellos." },
+    naturales: { 
+      txt: "Las plantas y sus partes: Las plantas son seres vivos increíbles que no necesitan ir al supermercado porque fabrican su alimento. Cada parte tiene un trabajo: la raíz sujeta la planta al suelo y toma agua; el tallo es como un ascensor que lleva el agua a las hojas; y las hojas son las encargadas de respirar y captar la luz del sol. Algunas plantas también tienen flores y frutos, que es donde guardan sus semillas para que nazcan nuevas plantas." }
+  },
+9: {
+    matematica: { 
+      txt: "Estrategias de división (El arte de repartir): Dividir no es más que repartir una cantidad en partes iguales. Imaginá que tenés 12 caramelos y los querés repartir entre 3 amigas. Podés ir dándole uno a cada una hasta que se acaben. Al final, cada una tendrá 4. En lugar de hacer eso uno por uno, usamos la división: 12/3 = 4. Saber dividir te ayuda a ser justa en los juegos y a organizar mejor tus cosas. ¡Es el superpoder de compartir!" },
+    lengua: { 
+      txt: "Familias de palabras (Parientes cercanos): Las palabras también tienen familia. Una Familia de Palabras es un grupo de palabras que nacen de una misma "palabra mamá" (llamada raíz) y comparten un significado parecido.
+Ejemplo: De la palabra PAN, nacen: Panadero, panadería, pancito y panificadora.
+Si conocés a la "palabra mamá", ¡es mucho más fácil saber cómo se escriben sus hijas y qué significan!" },
+    sociales: { 
+      txt: "Circuitos productivos I (La Materia Prima): ¿Te preguntaste alguna vez cómo llega la leche a tu heladera o el algodón a tu remera? Todo empieza con la Materia Prima. Es el elemento natural que el hombre saca de la naturaleza: la leche de la vaca, la lana de la oveja o la madera del árbol. Este es el primer paso de un gran viaje llamado "Circuito Productivo", donde lo natural se transforma en algo que usamos todos los días." },
+    naturales: { 
+      txt: "Fotosíntesis básica (Plantas que cocinan): A diferencia de nosotros, las plantas no van al súper; ellas fabrican su propio alimento. Este proceso se llama Fotosíntesis. Para hacerlo, necesitan tres ingredientes mágicos: Luz del Sol, Agua y un gas del aire llamado Dióxido de Carbono. Con todo eso, la planta "cocina" su energía y, de paso, nos regala Oxígeno para que nosotros podamos respirar. ¡Son las mejores cocineras del planeta!" }
+  },
+10: {
+    "title": "🏆 MINI EXAMEN 1",
+    "isExam": true,
+    "matematica": { "txt": "¡Llegaste al primer gran desafío! Repasamos las tablas del 5, 6 y 7, las fracciones y cómo repartir cantidades." },
+    "lengua": { "txt": "Es hora de demostrar cuánto sabés del diccionario, las reglas de acentuación y las familias de palabras." },
+    "sociales": { "txt": "Recorramos de nuevo nuestras provincias, sus climas y el origen de los productos que usamos." },
+    "naturales": { "txt": "Recordemos a los animales con y sin huesos, y el proceso mágico de la fotosíntesis." }, 	 
+   }
+11: {
+    matematica: { 
+      txt: "Números hasta el 50.000: ¡Ya estamos manejando números de cinco cifras! Llegar al 50.000 es como llenar cinco estadios de fútbol enteros con personas. Lo más importante aquí es el valor posicional: entender que un "5" no vale lo mismo si está al final (5 unidades) que si está al principio (50.000 unidades). Dominar estos números grandes te va a permitir entender desde el precio de una consola de juegos hasta la cantidad de habitantes de una ciudad. ¡Es el lenguaje de las grandes cantidades!" },
+    lengua: { 
+      txt: "El párrafo y la sangría: Un párrafo es como un "equipo" de oraciones que trabajan juntas para explicar una idea principal. Para que el lector sepa dónde empieza una nueva idea, usamos la sangría, que es ese pequeño espacio vacío al comienzo de la primera línea. Organizar nuestros textos en párrafos con sangría hace que nuestras historias y tareas sean mucho más claras, ordenadas y agradables de leer para los demás." },
+    sociales: { 
+      txt: "Circuitos productivos II (La Industria): Después de obtener la materia prima de la naturaleza (como el cuero de la vaca o el algodón de la planta), esta viaja a las fábricas para su transformación industrial. Aquí, gracias al trabajo de muchas personas y al uso de máquinas y tecnología, la materia prima se convierte en un producto elaborado, como unas zapatillas o una remera. Entender esta etapa nos ayuda a valorar todo el esfuerzo y los procesos que ocurren antes de que un producto llegue a los negocios." },
+    naturales: { 
+      txt: "El Reino Fungi: Los hongos forman un reino propio llamado Fungi. A diferencia de las plantas, no pueden fabricar su propio alimento con el sol, y a diferencia de los animales, no se desplazan para buscar comida. Se alimentan descomponiendo restos de hojas, madera o alimentos, lo que los convierte en los grandes "recicladores" de la naturaleza. Algunos son grandes como los champiñones y otros son microscópicos como las levaduras que usamos para hacer el pan." }
+},
+12: {
+    matematica: { 
+      txt: "Ángulos (Recto, Agudo y Obtuso): Un ángulo es, simplemente, la "esquina" o abertura que se forma donde dos líneas se cruzan. Los ves en todos lados: en las agujas de un reloj, en una porción de pizza o al abrir una puerta. El ángulo recto es el más famoso, porque es perfecto como la esquina de tu cuaderno (90°). Si es más cerradito y pinchudo, se llama agudo; y si es bien abierto y bosteza, se llama obtuso. Saber identificarlos es el primer paso para ser una gran arquitecta o diseñadora." },
+    lengua: { 
+      txt: "Los Verbos I: El Infinitivo (El nombre de la acción):
+Los verbos son las palabras más importantes de nuestras oraciones porque son el "motor": expresan todo lo que hacemos, sentimos o lo que sucede a nuestro alrededor. Palabras como saltar, correr, estudiar, reír o soñar son verbos.
+Pero, ¿qué es el Infinitivo? Es la forma básica del verbo, su nombre original cuando todavía nadie está realizando la acción. Es como el verbo "en pijama" antes de salir a trabajar. Es fundamental conocerlo porque así es como aparecen los verbos en el diccionario.
+Para reconocer un infinitivo, solo tenés que mirar cómo termina la palabra. En nuestro idioma, todos los infinitivos se dividen en tres grandes grupos o "familias":
+
+1ª Conjugación (Terminan en -AR): Como jugar, cantar o saltar.
+2ª Conjugación (Terminan en -ER): Como comer, leer o correr.
+3ª Conjugación (Terminan en -IR): Como reír, dormir o escribir.
+
+Saber identificar el infinitivo es como tener una brújula: nos ayuda a entender cómo cambia el verbo cuando decimos "yo juego" (del verbo jugar) o "nosotros comimos" (del verbo comer). ¡Es la base para escribir y hablar como una verdadera experta!" },
+    sociales: { 
+      txt: "Problemas ambientales regionales: La naturaleza es nuestro hogar, pero a veces las personas realizamos actividades que la dañan sin darnos cuenta. Los problemas ambientales aparecen cuando el aire, el agua o el suelo se ensucian (contaminación) o cuando se cortan demasiados árboles (deforestación). En nuestra región, esto puede afectar los ríos donde nos bañamos o el aire que respiramos. Aprender sobre estos problemas es el primer paso para convertirnos en "guardianes del planeta" y buscar ideas para cuidar el lugar donde crecemos." },
+    naturales: { 
+      txt: "El microscopio y lo invisible: Existen seres vivos y estructuras tan pequeñas que nuestros ojos no pueden verlos. El microscopio es un instrumento asombroso que usa lentes potentes para "agrandar" esas imágenes miles de veces. Gracias a él, podemos descubrir el mundo de los microbios, las bacterias y las células que forman nuestro cuerpo. Es la herramienta principal de los científicos para entender cómo funcionan los seres vivos por dentro y cómo combatir enfermedades." }
+  },
+13: {
+    matematica: { 
+      txt: "Fracciones II (Medios, Cuartos y Octavos): Ya sabés que las fracciones son partes de un entero. Ahora vamos a ver cómo se relacionan entre ellas. ¿Sabías que si juntás dos cuartos de kilo de helado tenés exactamente medio kilo? ¿O que si cortás un alfajor en ocho pedacitos, cada uno es un octavo? Aprender estas equivalencias te sirve para ser súper precisa cuando cocinás una receta rica, cuando vas a la fiambrería o cuando tenés que repartir algo entre muchos amigos de forma justa." },
+    lengua: { 
+      txt: "Sinónimos y Antónimos: Para que nuestros textos no sean aburridos y no repitan siempre las mismas palabras, usamos los sinónimos, que son palabras distintas con significados parecidos (como "lindo" y "bello"). Por otro lado, los antónimos son palabras que significan lo opuesto (como "alto" y "bajo"). Usarlos correctamente nos da un vocabulario mucho más rico y nos permite expresar exactamente lo que queremos decir." },
+    sociales: { 
+      txt: "El Municipio y sus funciones: ¿Alguna vez te preguntaste quién cuida las plazas, quién arregla los semáforos o quién junta la basura de tu cuadra? Esa es la tarea del Municipio. Es el equipo de gobierno más cercano a tu casa, liderado por el Intendente. Su trabajo es organizar la ciudad para que todos vivamos mejor, cuidando que los hospitales funcionen y que las calles estén iluminadas. Conocer cómo funciona el municipio te ayuda a entender que vos también podés participar para que tu barrio esté cada día más lindo." },
+    naturales: { 
+      txt: "El Sistema Digestivo: Nuestro cuerpo necesita energía para jugar y estudiar, y esa energía viene de la comida. El sistema digestivo es el encargado de desarmar los alimentos en pedacitos minúsculos llamados nutrientes. Todo comienza en la boca con los dientes, sigue por el esófago hasta el estómago (que funciona como una licuadora) y termina en los intestinos, donde el cuerpo absorbe lo bueno y descarta lo que no sirve. ¡Es una verdadera fábrica de procesamiento!" }
+  },
+14: {
+    matematica: { 
+      txt: "Multiplicación por 10, 100 y 1.000: Este es el "truco de magia" favorito de los matemáticos. No hace falta hacer cuentas largas: para multiplicar por 10, 100 o 1.000, solo tenés que escribir el número original y agregarle los ceros que correspondan al final. Por ejemplo, si tenés 5 billetes de 100, tenés un 5 con dos ceros: ¡500! Este atajo te va a dar una velocidad increíble para resolver cálculos mentales y manejar dinero como una experta." },
+    lengua: { 
+      txt: "Comprensión de Textos: La Noticia (¡Convertite en Periodista!): ¿Alguna vez te preguntaste cómo nos enteramos de las cosas asombrosas que pasan en el mundo? Para eso existen las noticias. Una noticia es un texto que nos cuenta un hecho que es real (no es un invento), importante para los demás y que sucedió hace muy poquito tiempo.
+Pero leer una noticia es como ser una detective: para entenderla perfectamente, tenés que encontrar las 6 piezas del rompecabezas. Si lográs responder estas preguntas, ¡nadie te va a poder engañar con lo que leés!:
+¿Qué pasó? (El hecho: ¿Hubo un rescate? ¿Se descubrió un planeta?).
+¿Quiénes participaron? (Los protagonistas: personas, animales o instituciones).
+¿Dónde ocurrió? (El lugar: una ciudad, el espacio, un bosque).
+¿Cuándo pasó? (El tiempo: ayer, hoy a la mañana, el lunes pasado).
+¿Cómo sucedió? (La forma en que pasaron las cosas, paso a paso).
+¿Por qué? (La razón o el motivo que causó todo).
+Las noticias suelen tener un Título bien grande para llamar tu atención y a veces una Foto con un epígrafe (un textito abajo) que nos ayuda a imaginar mejor la escena. Saber leer noticias te permite estar siempre informada, conocer otras realidades y entender los cambios que ocurren en nuestro país y en todo el planeta. ¡A buscar esas 6 respuestas!" },
+    sociales: { 
+      txt: "Recursos No Renovables: La Tierra nos regala tesoros que usamos para tener energía, como el petróleo (para la nafta de los autos) o el gas (para cocinar). Pero hay un secreto: estos son recursos no renovables, lo que significa que la naturaleza tardó millones de años en fabricarlos y, si los usamos todos, ¡no volverán a crecer! Por eso es tan importante aprender a no derrocharlos y a empezar a usar energías "limpias" como la del sol o la del viento, que nunca se terminan." },
+    naturales: { 
+      txt: "El Sistema Respiratorio: Respirar es algo que hacemos sin pensar, pero es vital para vivir. El sistema respiratorio permite que el oxígeno del aire entre a nuestro cuerpo y que el dióxido de carbono (que no nos sirve) salga. El aire entra por la nariz o boca, baja por la tráquea y llega a los pulmones, que se inflan como globos. Allí, el oxígeno pasa a la sangre para ser repartido a todo el cuerpo." }
+  },
+15: {
+    matematica: { 
+      txt: "La División con Resto: Dividir es repartir, pero a veces la vida no es exacta y "sobra" algo. Imaginá que tenés 10 caramelos para repartir entre 3 amigas: le das 3 a cada una, ¡pero te sobra uno! Ese uno que queda solito se llama resto. Entender el resto es fundamental para resolver problemas de la vida real, como saber cuántas cajas necesitás para guardar tus juguetes o cuántos micros hacen falta para un viaje escolar sin que nadie se quede afuera." },
+    lengua: { 
+      txt: "Cartas (y Correos Electrónicos): Puentes de Palabras: ¿Alguna vez recibiste una carta con tu nombre o un mail con una noticia linda? Aunque hoy usamos mucho el chat del celular, las cartas y los correos electrónicos (mails) siguen siendo formas muy especiales de comunicarnos, especialmente cuando queremos contar algo con más detalle o de manera más organizada.
+Escribir una carta es como armar un rompecabezas de atención y cariño. Para que la persona que lo recibe nos entienda perfectamente, ambos formatos comparten una estructura que debemos respetar:
+Lugar y Fecha: Para que sepan desde dónde escribimos y qué día fue.
+Saludo: Es la entrada. Puede ser cariñoso ("¡Hola, Abu!") o más formal ("Estimado Director:").
+Cuerpo del mensaje: ¡Acá va lo más importante! Es donde contás tus historias, tus ideas o hacés tus pedidos.
+Despedida: El cierre. Puede ser con un beso, un abrazo o un "Atentamente" si es para alguien que no conocemos tanto.
+Firma: ¡Tu nombre! Para que no queden dudas de quién es la autora.
+La gran diferencia es que la carta viaja en un sobre de papel con una estampilla, y el mail viaja a la velocidad de la luz por internet. Aprender a escribirlos te permite estar cerca de personas que están lejos y expresar lo que sentís de una forma clara y hermosa. ¡Animate a escribir tu primer mensaje!" },
+    sociales: { 
+      txt: "Población (¿Quiénes somos?): La población no es solo un número; somos todas las personas que compartimos este país: niños como vos, abuelos, personas que vinieron de otros países y familias de todas las formas. Para saber cuántos somos y qué necesitamos (como más escuelas o más parques), se hacen los Censos. Estudiar a la población nos permite descubrir nuestra historia, nuestras diferencias y entender que, aunque todos somos distintos, formamos una gran comunidad que debe ayudarse entre sí." },
+    naturales: { 
+      txt: "El Sistema Circulatorio (¡El Gran Transportista de la Vida!): Imaginá que dentro de tu cuerpo existe una red de "autopistas" infinitas que llegan a todos lados. Por esas rutas viaja la sangre, que es el transporte oficial de tu organismo. Este sistema es el Circulatorio y tiene una misión vital: llevar oxígeno y nutrientes a cada rincón, ¡desde la punta de tu pelo hasta el dedo gordo del pie!
+Pero todo transporte necesita un motor, y el nuestro es el más asombroso de todos: El Corazón.
+El Corazón: Es un músculo incansable, del tamaño de tu puño cerrado, que late sin parar (¡incluso cuando dormís!). Su trabajo es "bombear", es decir, empujar la sangre con fuerza para que circule por todo el cuerpo.
+Las Venas y Arterias: Son los tubitos por donde viaja la sangre. Las arterias llevan la sangre "nueva" con oxígeno, y las venas traen la sangre de vuelta para que se limpie.
+Limpieza de Desechos: Además de llevar cosas buenas, el sistema circulatorio también funciona como un "camión de basura": recoge los desechos que tus células ya no necesitan para que el cuerpo pueda eliminarlos.
+¡Es el sistema de transporte más eficiente del mundo! Gracias a él, tus músculos tienen fuerza para correr y tu cerebro tiene energía para aprender cosas nuevas en esta App. Cuando hacés ejercicio y sentís que tu corazón late más rápido, es porque está trabajando extra para que tus músculos reciban más energía. ¡Cuidalo haciendo mucha actividad física y comiendo sano!" }
+  },
+16: {
+    matematica: { 
+      txt: "El Perímetro (Midiendo bordes): Imaginá que querés ponerle una cinta de colores a todo el borde de tu tablet o una cerca a la casita de tu mascota. Para saber cuánta cinta o madera tenés que comprar, necesitás conocer el perímetro. El perímetro es simplemente la suma de todos los lados de una figura. Si tenés un cuadrado y cada lado mide 5 cm, sumás 5 + 5 + 5 + 5 y ¡listo!, tenés 20 cm de perímetro. Es como "caminar" por todo el borde de una forma y contar cuántos pasos diste." },
+    lengua: { 
+      txt: "Prefijos y Sufijos (Fábrica de palabras): Las palabras son como piezas de un juego de construcción. A veces, una palabra cortita (palabra raíz) puede transformarse en una nueva si le agregamos "pedacitos".
+Prefijos: Se pegan adelante. Si a "activa" le agregás hiper-, tenemos la palabra hiperactiva (es, decir muy activa). Si a "igual" le ponés des-, es desigual (algo que no es igual). Los prefijos son, están dados y son los siguientes: "des-", "anti-", "re-", "sub-", "pre-", "inter-", 
+Sufijos: Se pegan atrás. Si a "flor" le agregás -ero, tenés un florero. Si a "pan" le ponés -cito, tenés una pancito, un pan chiquito. ¡Es como magia para crear vocabulario!" },
+    sociales: { 
+      txt: "Nómades y Sedentarios (¿Dónde vivimos?): Hace miles de años, no había ciudades. Los primeros grupos humanos eran Nómades: no tenían una casa fija, se mudaban siguiendo a los animales que cazaban y buscaban frutos según la estación. Eran grandes viajeros. Después, descubrieron que podían plantar semillas y criar animales, y se volvieron Sedentarios: construyeron casas firmes y se quedaron en un lugar para siempre. Esa decisión fue el comienzo de los pueblos y ciudades que conocemos hoy." },
+    naturales: { 
+      txt: "El Sistema Excretor (La limpieza interna)
+Tu cuerpo es como una casa que genera basura todos los días (desechos que sobran de la comida y el aire). El Sistema Excretor es el encargado de sacar esa basura para que no te enfermes. Los protagonistas son los Riñones, que parecen dos porotos mágicos que filtran tu sangre todo el tiempo. Lo que no sirve lo transforman en orina (pis) y lo mandan a la vejiga para expulsarlo. ¡Es un sistema de limpieza que nunca descansa!" }
+  },
+17: {
+    matematica: { 
+      txt: "Fracciones III Suma de fracciones iguales (Repartiendo con amigos): Sumar fracciones es muy fácil si todas tienen el mismo número abajo (denominador). Imaginate que cortás una pizza en 8 porciones iguales. Si vos te comés 1 porción (1/8) y tu amiga se come 2 porciones (2/8), entre las dos comieron 3 porciones de las 8 que había (3/8). ¿Viste? El número de abajo se queda igual porque la pizza sigue cortada en 8, ¡solo sumamos lo que usamos!" },
+    lengua: { 
+      txt: "La Fábula y la Moraleja (Animales que enseñan):
+Las fábulas son cuentos muy antiguos y especiales. Sus personajes casi siempre son animales que hablan, como una liebre presumida o una tortuga esforzada. Lo más importante de la fábula no es solo la historia, sino la Moraleja. La moraleja es un consejo o una enseñanza que nos ayuda a ser mejores personas, como 'no hay que burlarse de los demás' o 'con esfuerzo se llega lejos'." },
+    sociales: { 
+      txt: "Diaguitas y Guaraníes (Culturas de nuestra tierra): Antes de que llegaran los barcos de Europa, Argentina estaba llena de pueblos sabios.
+Los Diaguitas: Vivían en las montañas del norte. Eran ingenieros increíbles: hacían "escalones" de tierra en los cerros para plantar maíz y zapallo porque el suelo era muy empinado.
+Los Guaraníes: Vivían en la selva, cerca de los grandes ríos. Eran maestros de la naturaleza: usaban las plantas para curarse y hacían canoas veloces para viajar por el agua. ¡Sus palabras todavía las usamos hoy!" },
+    naturales: { 
+      txt: "Salud e Higiene (Nuestro escudo protector): La salud no es solo no tener fiebre. Estar sano significa que tu cuerpo y tu mente se sienten bien. Para ayudar a nuestro cuerpo, usamos la higiene. Lavarnos las manos antes de comer elimina "monstruos" invisibles (microbios) que quieren entrar a nuestra panza. Bañarnos y cepillarnos los dientes es como darle un escudo de protección a nuestra piel y sonrisa. ¡Cuidar tu higiene es quererte a vos misma!" }
+  },
+18: {
+    matematica: { 
+      txt: "Metro y Centímetro (¿Cuánto mide?): Si querés medir cuánto creciste, usás el metro. Pero si querés medir cuánto mide tu lápiz favorito, usás el centímetro, porque es más chiquito. Un secreto: el metro es como el "jefe" y tiene 100 centímetros adentro. En tu regla escolar podés ver los centímetros marcados con numeritos. Saber medir te ayuda a construir cosas, a coser ropa o simplemente a conocer mejor el tamaño de todo lo que te rodea." },
+    lengua: { 
+      txt: "El Adverbio (Los preguntones)
+Los adverbios son palabras que responden preguntas sobre la acción.
+Si preguntás ¿Dónde?, aparecen los de Lugar: aquí, allá, cerca, lejos. (Ejemplo: "El gato está lejos").
+Si preguntás ¿Cuándo?, aparecen los de Tiempo: hoy, ayer, pronto, todavía. (Ejemplo: "Jugaremos mañana").
+Son como lupas que nos dan más información sobre lo que está pasando en la oración." },
+    sociales: { 
+      txt: "La Conquista (Un choque de mundos muy difícil): Hace unos 500 años, llegaron desde Europa barcos con exploradores que traían armas, armaduras y animales que aquí no se conocían, como los caballos. Este momento se llamó "La Conquista" y fue un proceso muy doloroso y difícil para los pueblos originarios que ya tenían sus ciudades, sus familias y sus leyes en estas tierras.
+¿Por qué fue tan difícil para ellos?
+La pérdida de la libertad: Los conquistadores obligaron a muchos indígenas a trabajar para ellos en minas o campos, tratándolos muy mal y quitándoles la posibilidad de vivir como ellos querían.
+Enfermedades nuevas: Los europeos trajeron virus (como la viruela) para los que los cuerpos de los habitantes de América no tenían defensas. Esto hizo que muchísima gente se enfermara gravemente.
+El respeto por la cultura: A los pueblos originarios se les prohibió hablar sus idiomas, practicar sus religiones y seguir sus costumbres. Les impusieron una forma de vida totalmente distinta a la fuerza.
+A pesar de todo este sufrimiento, muchos pueblos lucharon valientemente para defender su tierra y su forma de ser. Por eso, hoy estudiamos este tema no como un simple viaje, sino como un momento de gran resistencia. Recordar lo que sufrieron nos ayuda a entender por qué hoy es tan importante respetar la identidad y los derechos de todas las personas." },
+    naturales: { 
+      txt: "Nutrición Saludable (Energía de la buena): Comer no es lo mismo que nutrirse. Nutrirse es darle a tu cuerpo los "ladrillos" que necesita para crecer.
+Las frutas y verduras te dan vitaminas (son como el equipo de mantenimiento).
+La carne, huevos o legumbres te dan proteínas (son los ladrillos para tus músculos).
+Los cereales y pastas te dan energía rápida para correr.
+Si comés variado, tu cuerpo va a ser como un auto de carreras: ¡siempre listo y con mucha fuerza!" }
+  },
+19: {
+    matematica: { 
+      txt: "Gráficos de barras (Dibujando números): A veces ver muchos números cansa. Para eso inventamos los gráficos de barras. Imaginá que hacés una encuesta sobre el helado favorito: 5 prefieren chocolate, 3 vainilla y 8 dulce de leche. Dibujamos barras de colores: la más alta será la de dulce de leche. De un solo vistazo, sin leer todos los números, ya sabés quién ganó. ¡Es la forma más divertida de organizar información!" },
+    lengua: { 
+      txt: "Pronombres personales (El reemplazo ideal): Si estamos contando una historia sobre Aitana, no hace falta decir "Aitana" en cada renglón. Podemos usar Pronombres.
+En lugar de "Aitana estudia", decimos "Ella estudia".
+Si hablamos de nosotros, decimos "Nosotros jugamos".
+Palabras como Yo, Vos, Él, Ella, Nosotros y Ellos son los pronombres. Sirven para que lo que escribimos suene más natural y no sea tan repetitivo." },
+    sociales: { 
+      txt: "La vida en la Colonia (Un viaje en el tiempo a 1810): Imaginá que un día te despertás y no hay ruidos de motores, ni bocinas, ni el zumbido de la heladera. ¡Bienvenida a la época de la Colonia! En 1810, la vida tenía un ritmo mucho más lento, marcado por la luz del sol y el sonido de las carretas sobre las piedras de las calles.
+¿Cómo era un día común en Buenos Aires?
+El agua y el fuego: No había canillas. El Aguatero pasaba con un gran carro tirado por bueyes vendiendo agua que traía del río (¡y había que hervirla!). Tampoco había llaves de luz; cuando bajaba el sol, las casas se iluminaban con velas de grasa que daban una luz bajita y bailarina. Por eso, la gente se acostaba muy temprano.
+Los pregones en la calle: Las veredas eran el escenario de un "show" musical. Los vendedores no gritaban, ¡cantaban! "¡Mazamorra caliente para las viejas sin dientes!" o "¡Velas, velitas, para alumbrar las casitas!". Cada vendedor tenía su propia canción (pregón) para que la gente saliera a comprar desde sus ventanas.
+¿A qué jugaban los chicos?: Sin tablets ni tele, la diversión estaba en la calle y en los patios. Los chicos eran expertos en el trompo, el balero y las escondidas. Las nenas solían jugar a las muñecas de trapo o al "Arroz con leche" en rondas gigantes. ¡El juego era la forma de hacer amigos!
+Las clases sociales: No todos vivían igual. En las casas grandes con patios con aljibes vivían las familias más ricas (los "vecinos"), mientras que en las orillas de la ciudad, en casas de barro y paja, vivía la gente más humilde, muchos de ellos esclavos que soñaban con la libertad.
+En las tertulias (que eran como las fiestas de ahora), las familias se reunían a tomar chocolate caliente, tocar el piano y charlar. Pero en esas charlas, empezaba a crecer una idea muy fuerte: la de ser un país libre. La vida era tranquila, pero el aire ya olía a revolución." },
+    naturales: { 
+      txt: "Los Sentidos (Tus radares): Para conocer el mundo, tenés 5 sentidos, pero hoy veremos dos muy especiales:
+La Vista: Tus ojos funcionan como cámaras que captan la luz. Gracias a ellos podés ver los colores, las formas y qué tan lejos están las cosas.
+El Oído: Tus orejas atrapan las vibraciones que hay en el aire. Esas vibraciones viajan adentro de tu cabeza y se transforman en sonidos: la música, los pájaros o la risa de mamá. ¡Tus sentidos te mantienen conectada con todo!" }
+  },
+20: {
+    "title": "🏆 MINI EXAMEN 2",
+    "isExam": true,
+    "matematica": { "txt": "¡Mitad de camino! Repasamos multiplicaciones por una cifra, el valor de los números y problemas de billetes." },
+    "lengua": { "txt": "Demostrá lo que sabés sobre sustantivos propios, el uso de mayúsculas y los cuentos maravillosos." },
+    "sociales": { "txt": "Volvemos a visitar a las autoridades locales y los puntos cardinales en el mapa de nuestra provincia." },
+    "naturales": { "txt": "Recordamos las partes de las plantas, sus funciones y cómo se clasifican los animales según su esqueleto." }
+},
+21: {
+    matematica: { 
+      txt: "Números hasta el 100.000: ¡Llegamos a las seis cifras! Imagina que cada número es una persona: el número 100.000 es como llenar el estadio de Gimnasia y Estudiantes juntos, ¡y que todavía sobre gente afuera! El secreto para no perderse es separar los miles con un puntito. El "1" en la posición de la centena de mil vale cien veces más que el "1" en la posición de los miles. Dominar estos números te permite entender desde el precio de un auto hasta cuántos granos de arroz hay en un paquete grande." },
+    lengua: { 
+      txt: "Ortografía (Uso de B y V): Aunque suenan igual, la B y la V tienen "amigos preferidos" (reglas). Por ejemplo, la B siempre va de la mano con la L y la R (como en bla-nco o bra-zo). La V, en cambio, es muy amiga de la N (como en i-n-vitar o i-n-vierno). Un truco de experta: si una palabra viene de otra que lleva B, ¡ella también la lleva! (de caballo sale caballería). Escribir bien es como peinar tus ideas antes de que salgan a pasear." },
+    sociales: { 
+      txt: "El Cabildo y la Revolución de Mayo: En mayo de 1810, Buenos Aires era un hervidero. La gente no quería que un Rey que vivía en España, al otro lado del océano, decidiera todo por ellos. Se reunieron frente al Cabildo (que era como la municipalidad de antes) y, aunque llovía mucho, nadie se movió de la plaza hasta que se formó la Primera Junta. Fue el nacimiento de nuestro primer gobierno patrio. Fue un momento de mucha valentía donde los vecinos decidieron que querían ser los dueños de su propio destino." },
+    naturales: { 
+      txt: "Materiales Sólidos y Líquidos: ¿Por qué una piedra mantiene su forma y el agua se desparrama? Todo depende de cómo están las "piezas chiquititas" (moléculas) adentro. En los Sólidos, las piezas están tan apretadas y agarradas que no se mueven (por eso un lápiz no cambia de forma solo). En los Líquidos, las piezas están más sueltas y pueden deslizarse unas sobre otras, como si estuvieran bailando. Por eso el agua toma la forma del vaso o de la botella donde la pongas. ¡Es pura física en movimiento!" }
+  },
+22: {
+    matematica: { 
+      txt: "Triángulos según sus lados: Los triángulos son las figuras más fuertes de la geometría (¡por eso se usan para construir puentes!). Pero no todos son hermanos gemelos:
+
+Equilátero: Es el más prolijo, tiene sus 3 lados exactamente iguales.
+Isósceles: Tiene 2 lados iguales y uno distinto (parece una porción de pizza flaquita).
+Escaleno: Es el más rebelde, ¡ninguno de sus 3 lados mide lo mismo!
+
+Saber esto es clave para los arquitectos y diseñadores." },
+    lengua: { 
+      txt: "Tiempos verbales (Pasado y Presente): Los verbos son viajeros del tiempo. Si decís "Aitana estudió", estamos mirando hacia atrás (Pasado), a algo que ya se terminó. Si decís "Aitana estudia", está pasando ahora mismo (Presente). Es muy importante usar el tiempo correcto para que los demás sepan si les estás contando una anécdota de ayer o lo que querés hacer en este momento. ¡Tus palabras tienen el poder de moverte por el calendario!" },
+    sociales: { 
+      txt: "Manuel Belgrano y la Bandera: Belgrano era un hombre muy culto que creía que la educación era el superpoder más grande de los niños. Durante las batallas por la independencia, se dio cuenta de que necesitábamos un color que nos uniera y nos distinguiera de los españoles. Así, a orillas del río Paraná, izó por primera vez la bandera celeste y blanca. No eligió esos colores por el cielo, sino porque eran los colores que ya se usaban en las escarapelas para identificarnos como hermanos de una misma tierra." },
+    naturales: { 
+      txt: "Mezclas y Separaciones I: En la naturaleza, casi todo está mezclado. Pero hay dos tipos:
+
+Heterogéneas: Se notan las partes a simple vista (como una ensalada de frutas o agua con aceite).
+Homogéneas: Parecen una sola cosa (como el café con leche o el perfume).
+
+Lo mejor es que existen trucos para separarlas: usar un colador (filtración), usar un imán si hay metales o dejar que el agua se evapore con el sol. ¡Sos como una científica en su laboratorio personal!" }
+  },
+23: {
+    matematica: { 
+      txt: "División por dos cifras I (¡A repartir en grande!): Imaginate que tenés 500 figuritas y las querés repartir entre 25 amigas. ¡Son muchas! Como el 25 es un número grande, usamos un truco de detective que se llama "redondear": pensás al 25 como si fuera un 20 o un 30 para que sea más fácil calcular mentalmente.El truco de la puntería: Si no sabés cuánto es 500 dividido 25, probás: "¿Entrará 10 veces? 10 x 25 es 250... ¡me falta un montón!". "¿Entrará 20 veces?". Es como tirar al blanco: si te pasás del número, probás con uno más chico; si te falta mucho, probás con uno más grande. Lo más importante es escribir los números bien derechitos para no marearte con los que te van sobrando." },
+    lengua: { 
+      txt: "El Texto Expositivo (El libro que te enseña): A diferencia de un cuento donde hay lobos que hablan o hadas, el Texto Expositivo es el que te cuenta cómo son las cosas en la realidad.
+¿Dónde lo ves?: En un libro de animales que te explica qué comen los leones, o en una revista que cuenta cómo se llega a la Luna.
+¿Cómo lo reconocés?: Siempre tiene un Título grande, Subtítulos (que son como títulos más chiquitos para organizar el tema) y Fotos con un texto abajo llamado epígrafe que te explica qué estás viendo. No inventa historias, ¡te da información real para que seas una experta!" },
+    sociales: { 
+      txt: "San Martín y el Cruce de los Andes: José de San Martín fue un estratega increíble. Para liberar a Chile, tuvo que cruzar con más de 5.000 hombres las montañas más altas de América. ¡No tenían camiones ni aviones! Fueron a caballo y mula, llevando comida seca y abrigos pesados para el frío extremo. Fue una hazaña que hoy estudia todo el mundo porque demostró que con organización, compañerismo y un objetivo claro (la libertad), no hay montaña que sea imposible de escalar." },
+    naturales: { 
+      txt: "El Ciclo del Agua II: El agua que tomás hoy es la misma que existía hace millones de años. ¡Es la gran recicladora! El Sol calienta el agua de los ríos (Evaporación), ese vapor sube y forma las nubes (Condensación), y cuando las nubes están muy pesadas, el agua cae en forma de lluvia o nieve (Precipitación). Este ciclo es fundamental porque limpia el agua y la lleva a lugares donde las plantas y los animales la necesitan para vivir." }
+  },
+24: {
+    matematica: { 
+      txt: "Decimales I (Los pesos y los centavos): Cuando acompañás a mamá al súper y ves un precio como $15,50, ese número tiene una coma.
+¿Para qué sirve?: La coma es una pared. Del lado izquierdo están los pesos enteros (lo que podés comprar con billetes). Del lado derecho están los centavos, que son como "pedacitos" de un peso.
+El secreto: Necesitás juntar 100 centavos para formar 1 peso entero. Si algo cuesta $0,50, es la mitad de un peso. Aprender esto es como tener un "superpoder" en el quiosco: ¡vas a saber exactamente cuánto vuelto te tienen que dar!" },
+    lengua: { 
+      txt: "Uso de G y J (El secreto de los sonidos): La G es una letra que cambia de voz según con quién se junte:
+Voz suave: Cuando está con la A, O, U (Gato, Gota, Gusano). Suena "ga, go, gu".
+Voz fuerte: Cuando está con la E, I (Gente, Gigante). Ahí suena igual que la J.
+El truco del guardaespaldas: Si querés que la G suene suave con la E o la I (como en Gue-rra o Gui-tarra), tenés que ponerle una U en el medio. Esa U no se lee, ¡está ahí solo para proteger el sonido suave!
+La J: Ella es más simple, siempre suena fuerte, como un rugido: Jirafa, Jamón, Jefe." },
+    sociales: { 
+      txt: "Derechos del Niño: Todos los niños y niñas del mundo tienen una "armadura invisible" de leyes que los protegen. Tenés derecho a tener un nombre, a una familia que te cuide, a ir a la escuela, a jugar y a que los médicos te curen si te sentís mal. Estos derechos son para todos, sin importar de qué país vengas o qué idioma hables. Conocer tus derechos te ayuda a crecer segura y a respetar también los derechos de los demás." },
+    naturales: { 
+      txt: "Los imanes y el magnetismo (Fuerzas invisibles): Un imán es un objeto que tiene un "abrazo invisible" para los metales. Pero tienen una regla de oro:
+Los Polos: Todos los imanes tienen dos puntas: Norte y Sur.
+¿Se pegan o se separan?: Si intentás juntar un Norte con un Norte, vas a sentir que una fuerza invisible los empuja hacia afuera, ¡no quieren estar juntos! Pero si juntás un Norte con un Sur, ¡se pegan volando! A esto los científicos lo llaman: "Polos opuestos se atraen". Es la misma fuerza que hace que la brújula siempre marque hacia dónde está el Polo Norte de la Tierra." }
+  },
+25: {
+    matematica: { 
+      txt: "Fracciones IV (Fracciones Equivalentes): "Equivalente" es una palabra difícil que solo significa: "Valen lo mismo".
+Ejemplo rico: Imaginá que tenés un chocolate. Si lo cortás en 2 partes y te comés 1 (1/2), comiste la mitad. Si tu amiga tiene el mismo chocolate, lo corta en 4 partes y se come 2 (2/4), ¡las dos comieron la misma cantidad! Aunque los números sean distintos, la panza se llena igual. Son fracciones que se ven diferentes pero son "gemelas" en cantidad." },
+    lengua: { 
+      txt: "La Poesía y la Rima (Música con palabras): La poesía no se lee como una noticia; se lee casi como si estuvieras cantando.
+La Rima: Es cuando las palabras terminan parecido y hacen "música". Por ejemplo: "La ballena Elena, es gorda y es buena". Como Elena y buena terminan igual, suena divertido. Sirve para contar cómo nos sentimos o para imaginar mundos lindos usando el sonido de las letras." },
+    sociales: { 
+      txt: "La Constitución Nacional (El libro de las reglas): Imaginá que jugás a las escondidas pero nadie sabe las reglas: ¡sería un lío! Un país es igual. La Constitución es un libro donde están escritas las reglas para que todos los argentinos vivamos bien.
+¿Qué dice?: Dice que todos somos libres, que podemos ir a la escuela, que tenemos que cuidar la naturaleza y cómo se elige al Presidente. Es el "manual de instrucciones" para que el país funcione con justicia." },
+    naturales: { 
+      txt: "La Luz y las Sombras (Jugando con el Sol): La luz viaja siempre en línea recta, como una flecha súper veloz.
+¿Cómo se hace la sombra?: Cuando vos te ponés frente a una luz, tu cuerpo es como una pared que no la deja pasar. Como la luz no puede atravesarte, del otro lado se forma un espacio oscuro: ¡tu sombra!
+¿Por qué cambia?: Si la luz está muy bajita (como cuando el sol se está por ir), tu sombra se estira mucho. Si la luz está justo arriba tuyo, tu sombra se hace un circulito chiquito en tus pies." }
+  },
+26: {
+    matematica: { 
+      txt: "Unidades de Peso (El Kilo y el Gramo): ¿Alguna vez ayudaste a pesar las manzanas en la verdulería? Para saber cuánto "pesa" algo, usamos el Gramo y el Kilo.
+El Gramo (g): Es muy, muy livianito. Un clip de papel o un caramelito pesan más o menos 1 gramo. Se usa para cosas chiquitas.
+El Kilo (kg): Es más pesado. Un paquete de arroz o una botella de agua grande pesan 1 kilo.
+El secreto: ¡Necesitás 1.000 caramelitos de un gramo para que pesen lo mismo que el paquete de arroz! Saber esto te ayuda a entender las recetas de cocina y a saber cuánto cargás en tu mochila." },
+    lengua: { 
+      txt: "Sujeto y Predicado (¿Quién hace qué?): Toda oración es como una mini-película que tiene dos partes muy importantes:
+El Sujeto: Es el protagonista de la historia. ¿De quién estamos hablando? (Ejemplo: "Aiti" o "El gato").
+El Predicado: Es lo que el protagonista está haciendo. (Ejemplo: "...estudia mucho" o "...salta en el sillón").
+Si decís: "Aiti está nadando", Aiti es el sujeto y está nadando es el predicado. ¡Es la base para que tus historias se entiendan perfecto!" },
+    sociales: { 
+      txt: "Democracia y el Voto (Tu opinión es importante): Vivir en Democracia significa que todos los que vivimos en el país somos como un gran equipo que decide las cosas juntos.
+El Voto: Es una herramienta para elegir a las personas que van a cuidar el país. Es secreto (nadie te puede obligar a decir a quién elegís) y es un derecho que tienen todos los adultos. Es como cuando en casa deciden entre todos qué película ver: ¡el voto es tu voz para que el país sea como vos soñás!" },
+    naturales: { 
+      txt: "Sonido y Vibración (El baile del aire): ¿Sabías que el sonido es en realidad un movimiento invisible?
+La Vibración: Cuando tocás una cuerda de guitarra o golpeás una mesa, hacés que el aire de alrededor se mueva muy rápido. Ese movimiento se llama vibración.
+El viaje: Esas vibraciones viajan por el aire como onditas en el agua hasta llegar a tu oído. Si apoyás la mano suavemente en tu garganta y hacés un sonido fuerte (¡Aaaaaa!), vas a sentir un cosquilleo en los dedos. ¡Eso es tu voz vibrando!" }
+  },
+27: {
+    matematica: { 
+      txt: "Cuerpos Geométricos (Figuras que podés tocar): A diferencia de un dibujo plano en un papel, los Cuerpos Geométricos tienen volumen, o sea, ocupan un lugar en el espacio.
+Ejemplos: Una pelota es una esfera, un dado es un cubo y una caja de cereales es un prisma.
+Partes: Tienen "caras" (las paredes), "aristas" (los bordes o líneas) y "vértices" (las puntitas donde se juntan las líneas). ¡Mirá a tu alrededor y vas a ver que casi todo lo que ves tiene cuerpo!" },
+    lengua: { 
+      txt: "Conectores Temporales (Las palabras "pegamento"): Para que tus cuentos no sean un lío, usamos palabras que ordenan el tiempo.
+¿Cómo se usan?: Si contás tu día, decís: "Primero me lavé la cara, después desayuné y al final me puse a jugar". Esas palabras (primero, después, luego, finalmente) son los conectores. Sirven para que el que te escucha no se pierda y sepa qué pasó antes y qué pasó después." },
+    sociales: { 
+      txt: "Diversidad Cultural (Un país con muchos gustos): Argentina es como un rompecabezas hecho de piezas de muchos lugares.
+La mezcla: Aquí viven personas que vienen de familias que ya estaban antes (pueblos originarios) y personas que vinieron de países muy lejanos.
+El resultado: Por eso tenemos comidas tan ricas como la pizza, el asado o las empanadas, y músicas tan distintas. Esa mezcla se llama Diversidad y es lo que hace que nuestro país sea tan especial: ¡que todos seamos distintos nos hace más interesantes!" },
+    naturales: { 
+      txt: "Propiedades de los materiales (Elegir el mejor): ¿Por qué las medias son de tela y no de madera? ¿Por qué los vasos son de vidrio? Porque cada material tiene sus propios "superpoderes":
+Frágil: Se rompe fácil, como el vidrio.
+Elástico: Se estira y vuelve a su lugar, como una gomita de pelo.
+Conductor: Deja pasar el calor (como el metal de una cuchara en la sopa caliente).
+Los inventores eligen el material perfecto para que las cosas no se rompan y sean útiles para nosotros." }
+  },
+28: {
+    matematica: { 
+      txt: "Multiplicación de 2 cifras (El gran desafío): Multiplicar por números como 24 o 35 parece difícil, pero es solo hacer dos cuentas en una.
+El secreto: Primero multiplicás por el número de atrás (las unidades). Después, hacés un "pasito al costado" (dejás un lugar vacío) y multiplicás por el número de adelante. Al final, sumás los dos resultados.
+Consejo: ¡Escribí los números bien ordenaditos, uno debajo del otro, para que la suma final salga perfecta!" },
+    lengua: { 
+      txt: "La Crónica Periodística (Contar como un testigo): La crónica es una noticia pero con "mucho detalle".
+¿Qué hace?: El que la escribe te cuenta lo que pasó minuto a minuto, como si estuviera ahí con vos. Te cuenta el clima, cómo se sentía la gente y qué ruidos había. Se usa mucho para contar viajes, partidos de fútbol o fiestas importantes. ¡Es como una película escrita!" },
+    sociales: { 
+      txt: "La Inmigración (El viaje de los abuelos): Hace mucho tiempo, miles de personas de países como Italia o España se subieron a barcos gigantes para venir a vivir a Argentina.
+¿Por qué vinieron?: Muchos venían porque en sus países había guerras o no tenían comida, y soñaban con una vida mejor. Trajeron sus valijas llenas de ropa, pero también de canciones, recetas de pastas ricas y muchas ganas de trabajar. ¡Muchos de nuestros abuelos o bisabuelos hicieron ese viaje valiente!" },
+    naturales: { 
+      txt: "Electricidad Estática (Los chispazos mágicos): ¿Alguna vez te dio un "tironcito" el picaporte o viste que tu pelo se pega a un globo? Eso es la electricidad estática.
+¿Cómo pasa?: Cuando frotás dos cosas (como un globo en tu pulóver), las cargas eléctricas se amontonan. Al tocar algo, esas cargas saltan de golpe y hacen un ruidito: ¡es como un rayo minúsculo en tus manos! Es una energía que está quieta y de repente salta." }
+  },
+29: {
+    matematica: { 
+      txt: "Proporcionalidad Directa (Si uno sube, el otro también): Esto es lo que hacés cuando comprás caramelos.
+Ejemplo fácil: Si 1 alfajor cuesta $10, entonces 2 alfajores cuestan $20 y 3 cuestan $30. ¿Viste? Si comprás más cantidad, el precio sube siempre en la misma medida. ¡Saber esto te ayuda a que nunca te engañen con los precios en el kiosco!" },
+    lengua: { 
+      txt: "Comas y Puntos (Señales para leer): Los puntos y las comas son como los semáforos de un texto.
+La Coma (,): Es para hacer una pausa chiquitita para tomar aire. También sirve para separar cosas en una lista: "Me gusta el chocolate, la frutilla y el limón".
+El Punto (.): Es para decir: "¡Acá terminó esta idea!". Nos ayuda a que lo que escribimos no sea una ensalada de palabras y se entienda bien clarito." },
+    sociales: { 
+      txt: "El Patrimonio (Nuestros tesoros de todos): El Patrimonio son las cosas que son tan importantes y lindas que nos pertenecen a todos los argentinos.
+¿Qué puede ser?: Un edificio muy antiguo, una montaña hermosa como el Aconcagua o un baile como el tango. Cuidarlos es tarea de todos, para que cuando pasen muchos años, otros chicos también puedan disfrutarlos como nosotros." },
+    naturales: { 
+      txt: "Fuentes de Energía (¿Qué nos da fuerza?): Para que la tele prenda o el auto camine, necesitamos energía.
+No renovables: Como el petróleo o el gas. Algún día se van a terminar, por eso hay que cuidarlos mucho.
+Renovables: Como el Sol o el Viento. ¡Nunca se terminan!
+Aprender de dónde viene la energía nos ayuda a elegir las que no ensucian el aire ni el agua del planeta." }
+  },
+30: {
+    "title": "🏆 MINI EXAMEN 3",
+    "isExam": true,
+    "matematica": { "txt": "¡Nivel Experto! Ponemos a prueba las divisiones por dos cifras, fracciones equivalentes y proporcionalidad." },
+    "lengua": { "txt": "Repasamos el uso de G y J, la magia de la poesía, los conectores temporales y el análisis de oraciones." },
+    "sociales": { "txt": "Un viaje por la Constitución Nacional, los Derechos del Niño y la historia de nuestros abuelos inmigrantes." },
+    "naturales": { "txt": "Misterios de la ciencia: repasamos imanes, cómo viaja el sonido y las fases mágicas de la Luna." }
+},
+31: {
+    matematica: { 
+      txt: "Operaciones Combinadas (El orden de la receta): Cuando tenés una cuenta larga con sumas, restas y multiplicaciones juntas, no se resuelve de izquierda a derecha así nomás. ¡Hay reglas! Es como una receta: primero se resuelven las Multiplicaciones y Divisiones, y al final de todo las Sumas y Restas. Si respetás este orden, el resultado siempre será el correcto. ¡Es como un código secreto de los matemáticos!" },
+    lengua: { 
+      txt: "El Teatro (Historias para actuar): Un texto de teatro no se escribe como un cuento. Se llama Guion. En él, aparece el nombre del personaje en mayúsculas (por ejemplo: AITI:) y al lado lo que tiene que decir. También hay unas notas entre paréntesis llamadas Acotaciones, que le dicen al actor si tiene que estar feliz, triste o si tiene que entrar caminando despacio. ¡Es la base para armar una obra genial!" },
+    sociales: { 
+      txt: "Climas de Argentina (Del calor al frío): Argentina es un país muy, muy largo. Por eso, mientras en el Norte (como en Misiones) hace mucho calor y hay mucha humedad, en el Sur (como en Ushuaia) hace un frío tremendo y nieva. Tenemos climas Cálidos, Templados (como en Buenos Aires) y Fríos. Aprender sobre el clima nos ayuda a saber qué ropa llevar si viajamos y qué plantas crecen en cada lugar." },
+    naturales: { 
+      txt: "Los Movimientos de la Tierra (El baile espacial): La Tierra nunca está quieta, hace dos bailes al mismo tiempo.
+Rotación: Gira sobre sí misma como un trompo. Tarda 24 horas y gracias a eso tenemos el Día y la Noche.
+Traslación: Da una vuelta gigante alrededor del Sol. Tarda un año entero (365 días) y ese viaje es el que crea las Estaciones: Verano, Otoño, Invierno y Primavera." }
+  },
+32: {
+    matematica: { 
+      txt: "Decimales II (Sumar y restar con comas): Sumar precios es muy fácil si seguís una regla de oro: "La coma siempre debajo de la coma". Es como hacer una torre de cubos donde todos tienen que estar bien derechitos. Si alineás las comas, los centavos se suman con los centavos y los pesos con los pesos. ¡Así tus cuentas en el súper serán perfectas!" },
+    lengua: { 
+      txt: "El Informe de Experimento (Diario de científica):Cuando hacés un experimento, tenés que anotar todo para no olvidarte de nada. Un informe tiene pasos: 1) ¿Qué queremos descubrir? 2) ¿Qué materiales usamos? (como frascos, agua o semillas) 3) ¿Qué pasó durante el experimento? y 4) ¿Qué aprendimos al final? Es la forma en que los científicos comparten sus secretos con el mundo." },
+    sociales: { 
+      txt: "Relieve (Montañas y Llanuras): El "Relieve" es la forma que tiene el suelo. En Argentina tenemos de todo: la Cordillera de los Andes, que son montañas altísimas con nieve en la punta, y la Llanura Pampeana, que es un suelo plano y verde, ideal para que vivan las vacas y crezca el trigo. Conocer el relieve nos cuenta por qué algunos lugares son difíciles de cruzar y otros son ideales para vivir." },
+    naturales: { 
+      txt: "La Luna y sus fases (El espejo del Sol): La Luna no tiene luz propia; brilla porque el Sol la ilumina como si fuera un espejo. Como la Luna gira alrededor de la Tierra, a veces vemos toda su cara iluminada (Luna Llena) y otras veces solo un pedacito (Cuarto Creciente o Menguante). Es como si la Luna jugara a las escondidas con la luz del Sol." }
+  },
+33: {
+    matematica: { 
+      txt: "Fracciones V (Número Mixto): A veces, para contar algo, necesitamos números enteros y un pedacito más. Eso es el Número Mixto. Por ejemplo, si comiste una manzana entera y la mitad de otra, comiste 1 y 1/2. Se llama "mixto" porque mezcla un número grande con una fracción chiquita. ¡Lo vas a ver siempre en las recetas de cocina!" },
+    lengua: { 
+      txt: "Ortografía (Uso de H y C/S/Z): Llegamos al desafío final de las letras. La H es muda (no suena), pero es muy importante para no confundir palabras (como "habría" de haber y "abría" de abrir la puerta). También practicamos la C, S y Z, que a veces suenan parecido pero tienen reglas que nos ayudan a escribir como profesionales." },
+    sociales: { 
+      txt: "Parques Nacionales (Refugios mágicos): Existen lugares en la naturaleza que son tan especiales que los humanos decidimos protegerlos con leyes. Son los Parques Nacionales. Allí no se pueden talar árboles ni cazar animales. Son como "islas de naturaleza" donde animales como el Yaguareté o el Cóndor pueden vivir tranquilos y seguros." },
+    naturales: { 
+      txt: "El Sistema Solar (Nuestro barrio en el espacio): Vivimos en un barrio espacial donde el "jefe" es el Sol. Alrededor de él giramos 8 planetas. Algunos son de roca como la Tierra y Marte, y otros son gigantes hechos de gas y nubes, como Júpiter y Saturno (¡el que tiene los anillos lindos!). Somos una gran familia de planetas viajando por el universo." }
+  },
+34: {
+    matematica: { 
+      txt: "Área de rectángulos (¿Cuánto espacio hay?): Si el perímetro era el "borde", el Área es todo lo que hay adentro de una figura. Para calcularla, solo tenés que multiplicar el largo por el ancho. Es súper útil para saber, por ejemplo, cuánta pintura necesitás para pintar una pared o cuánto pasto necesitás para cubrir un jardín." },
+    lengua: { 
+      txt: "Coherencia Textual (Que todo tenga sentido): Un texto tiene Coherencia cuando se entiende bien y no salta de un tema a otro sin avisar. Es como un camino de baldosas: todas tienen que estar unidas para que no te caigas. Si hablás de dinosaurios, tenés que seguir hablando de ellos hasta terminar la idea, para que el que lee no se confunda." },
+    sociales: { 
+      txt: "Problemas Ambientales (Cuidar nuestra casa): A veces los humanos ensuciamos el aire, el agua o el suelo sin querer. Eso trae problemas como la contaminación. En este nivel aprendemos qué cosas dañan al planeta y, lo más importante, qué podemos hacer nosotros para ayudar, como no tirar basura y cuidar el agua cuando nos lavamos los dientes." },
+    naturales: { 
+      txt: "Las Máquinas Simples (¡Tus aliadas de fuerza!): 
+¿Alguna vez intentaste levantar algo muy pesado y no pudiste? ¡Para eso inventamos las máquinas simples! No necesitan electricidad ni motores; funcionan usando tu propia fuerza pero de una forma inteligente para que el trabajo sea más liviano.
+Aquí tenés a las tres grandes estrellas:
+La Palanca: Es como el subibaja de la plaza. Si ponés un punto de apoyo (una piedra o un tronco) y usas una tabla larga, podés levantar cosas pesadísimas haciendo fuerza del otro lado. ¡Es como tener un brazo de gigante!
+La Polea: Es una rueda con una soga. Se usa mucho en las obras en construcción o para sacar agua de un pozo. En lugar de "tirar hacia arriba" (que cansa mucho la espalda), tirás hacia abajo usando el peso de tu propio cuerpo. ¡Es mucho más fácil!
+La Rampa (o Plano Inclinado): Imagina que tenés que subir la bici a un escalón alto. Si la levantás a pulso, te cansás. Pero si ponés una madera inclinada, la vas empujando poquito a poco. Hacés más camino, ¡pero con muchísimo menos esfuerzo!
+¿Sabías qué? ¡Tu propio cuerpo tiene palancas! Tus brazos y tus piernas funcionan igual que estas máquinas para que puedas correr y saltar." }
+  },
+35: {
+    matematica: { 
+      txt: "División por dos cifras II (¡Nivel experto!): Ya sabés repartir, ahora vamos a practicar con números más grandes y divisiones un poquito más largas. Recordá siempre el truco de la puntería y de mantener los números bien ordenaditos. ¡Cuando termines este nivel, ninguna cuenta de dividir te va a ganar!" },
+    lengua: { 
+      txt: "Debates y opiniones (Respetar lo que pensamos): Un Debate es cuando dos o más personas hablan sobre un tema y cada una dice lo que piensa (su opinión). Lo más importante es saber escuchar al otro con respeto y explicar por qué pensamos así, usando razones claras. ¡Es la mejor forma de aprender cosas nuevas de los demás!" },
+    sociales: { 
+      txt: "Símbolos Patrios (Lo que nos une): Son los objetos y canciones que nos hacen sentir argentinos en cualquier lugar del mundo. La Bandera celeste y blanca, el Escudo, la Escarapela y nuestro Himno Nacional. Nos representan a todos y cuentan nuestra historia de libertad." },
+    naturales: { 
+      txt: "El Calor y la Temperatura (Energía en movimiento): Aunque parecen lo mismo, tienen un secreto: el Calor es energía que pasa de un objeto caliente a uno frío (como cuando tocás una taza de leche caliente). La Temperatura es lo que medimos con el termómetro para saber qué tan caliente está algo. ¡Es la ciencia de lo frío y lo caliente!" }
+  },
+36: {
+    matematica: { 
+      txt: "Lógica y acertijos (Gimnasia para el cerebro): ¡A jugar! Aquí no hay solo cuentas, sino misterios que tenés que resolver pensando con mucha atención. Son problemas divertidos que te desafían a usar la lógica para encontrar la respuesta escondida. ¡Entrená tu mente para ser una gran detective!" },
+    lengua: { 
+      txt: "Publicidad y Propaganda (Mensajes que convencen): Todo el tiempo vemos carteles o videos que nos quieren vender algo (Publicidad) o que nos quieren enseñar algo bueno, como lavarnos las manos (Propaganda). Aprendemos a mirar con atención para entender qué nos quieren decir y qué trucos usan para llamar nuestra atención." },
+    sociales: { 
+      txt: "Gobiernos Democráticos (Organizar el país): Para que un país funcione bien, las tareas se reparten. Unos hacen las leyes, otros gobiernan y otros se encargan de que las leyes se cumplan. Esto se hace para que ninguna persona tenga todo el poder y para que todos vivamos con justicia." },
+    naturales: { 
+      txt: "El aire y la atmósfera (El escudo de la Tierra): La Tierra tiene una capa de aire invisible que la rodea llamada Atmósfera. Es como una manta que nos protege del frío del espacio, filtra los rayos fuertes del Sol y nos da el oxígeno que necesitamos para respirar. Sin ella, ¡no habría vida!" }
+  },
+37: {
+    matematica: { 
+      txt: "Repaso de Geometría Total (¡Maestra de las formas!): Hacemos un viaje final por todo lo aprendido: puntos, líneas, figuras planas y cuerpos con volumen. Es el momento de demostrar que conocés el espacio y las formas como nadie. ¡Felicitaciones, experta!" },
+    lengua: { 
+      txt: "Análisis de cuentos de autor (Historias con estilo): Leemos cuentos escritos por autores famosos. Aprendemos a ver cómo cada escritor tiene su forma especial de contar las cosas, cómo eligen las palabras y cómo crean personajes que se quedan para siempre en nuestra memoria." },
+    sociales: { 
+      txt: "Mapas políticos y físicos (Dibujos de la Tierra): Aprendemos a leer mapas. El Mapa Político nos muestra dónde terminan las provincias y países (con líneas). El Mapa Físico usa colores para mostrarnos dónde hay montañas (marrón), llanuras (verde) y ríos (azul). ¡Es como ver el mundo desde un avión!" },
+    naturales: { 
+      txt: "Cadenas alimentarias (¿Quién come a quién?): En la naturaleza hay un equilibrio. Las plantas toman energía del Sol, los animales herbívoros comen plantas y los carnívoros comen otros animales. Es un ciclo donde todos son importantes para que la vida siga funcionando." }
+  },
+38: {
+    matematica: { 
+      txt: "El número 1.000.000 (¡El millón!): ¡Llegamos a la cima de la montaña! El número un millón es gigante. Imagina un millón de hormigas juntas... ¡sería un hormiguero enorme! Aprender a leer y escribir este número es la prueba final de que dominás los números grandes.!" },
+    lengua: { 
+      txt: "Repaso de Ortografía (Escritura perfecta): Hacemos un último repaso por todas las reglas que aprendimos. Tu forma de escribir ahora es clara, prolija y sin errores. ¡Estás lista para escribir cualquier libro que te propongas!" },
+    sociales: { 
+      txt: "La Justicia (Reglas para la paz): Hablamos de la importancia de que todos respetemos las leyes y de que existan jueces que nos ayuden a resolver problemas cuando alguien no cumple las reglas. La justicia sirve para que todos seamos tratados igual y con respeto." },
+    naturales: { 
+      txt: "Biomas argentinos (Nuestros paisajes): Hacemos un tour final por los ambientes de nuestro país: la selva, el desierto, la estepa y el bosque. Cada bioma tiene su propio clima y sus propios animales. Argentina es hermosa y muy variada, ¡descubramos por qué!" }
+  },
+39: {
+    matematica: { 
+      txt: "Desafío de ingenio final (¡La gran prueba!): Es el último juego. Poné a prueba todo lo que sabés para resolver este desafío final. Usá tu memoria, tu lógica y todo tu esfuerzo. ¡Vos podés lograrlo!" },
+    lengua: { 
+      txt: "Producción de textos propia (Tu propia voz): Ahora la autora sos vos. Usá todas tus herramientas de lengua para escribir tu propio texto: puede ser un cuento, una noticia o una poesía. ¡Queremos leer tu imaginación!" },
+    sociales: { 
+      txt: "Ciudadanía y valores (Ser una gran persona): Recordamos que lo más importante de aprender es ser buenos ciudadanos: ayudar a los demás, ser honestos y participar para que nuestra comunidad sea cada día mejor." },
+    naturales: { 
+      txt: "Cuidado del planeta (Guardianes de la Tierra): El desafío final es cuidar nuestra casa grande. Aprendemos a usar las 3R: Reducir, Reutilizar y Reciclar. El futuro del planeta está en manos de chicas valientes y sabias como vos. ¡A cuidarlo siempre!" }
+  },
+40: {
+    "title": "👑 GRAN EXAMEN FINAL",
+    "isExam": true,
+    "matematica": { "txt": "¡El último paso! Desafíos de área, decimales, el número un millón y acertijos lógicos para mentes brillantes." },
+    "lengua": { "txt": "Repasamos teatro, ortografía profesional, publicidad y cómo escribir tus propias historias con coherencia." },
+    "sociales": { "txt": "Recorremos los climas de Argentina, sus relieves, los Parques Nacionales y nuestros valores ciudadanos." },
+    "naturales": { "txt": "Guardianes de la Tierra: repasamos el Sistema Solar, máquinas simples, el calor y el cuidado del planeta." }
+    }
+};
+
+    /* --- BANCO DE PREGUNTAS --- */
+    const curriculumData = {
+  nivel1: {
+    matematica: [
+      { id: "mat1_1", type: "multiple-choice", question: "¿Cuál de estos números es el MAYOR?", options: ["3.210","9.850","7.001","4.999"], answer: "9.850" },
+      { id: "mat1_2", type: "true-false", question: "El número 6.400 es MENOR que 6.040.", answer: "false" },
+      { id: "mat1_3", type: "sort", question: "Ordená estos números de MENOR a MAYOR:", options: ["8.500", "1.200", "9.900", "4.300"], answer: ["1.200", "4.300", "8.500", "9.900"] }
+    ],
+    lengua: [
+      { id: "len1_1", type: "multiple-choice", question: "¿Cuál es un sustantivo PROPIO?", options: ["ciudad","perro","Rosario","montaña"], answer: "Rosario" },
+      { id: "len1_2", type: "fill-in-the-blank", question: "Los sustantivos propios se escriben con letra ___.", answer: "mayúscula" },
+      { id: "len1_3", type: "true-false", question: "'Aitana' es un sustantivo común.", answer: "false" }
+    ],
+    sociales: [
+      { id: "soc1_1", type: "multiple-choice", question: "¿Cuál es la capital de la República Argentina?", options: ["La Plata","Córdoba","CABA (Buenos Aires)","Rosario"], answer: "CABA (Buenos Aires)" },
+      { id: "soc1_2", type: "true-false", question: "Argentina tiene 23 provincias.", answer: "true" },
+      { id: "soc1_3", type: "fill-in-the-blank", question: "La provincia donde vivimos es ___.", answer: "buenos aires" }
+    ],
+    naturales: [
+      { id: "nat1_1", type: "multiple-choice", question: "¿A qué reino pertenece un hongo?", options: ["Animal","Planta","Protista o Fungi (Hongos)","Monera (Bacterias)"], answer: "Fungi (Hongos)" },
+      { id: "nat1_2", type: "true-false", question: "Las bacterias son seres vivos tan pequeños que no se ven a simple vista.", answer: "true" },
+      { id: "nat1_3", type: "fill-in-the-blank", question: "Las plantas fabrican su propio ___.", answer: "alimento" }
+    ]
+  },
+  nivel2: {
+    matematica: [
+      { id: "mat2_1", type: "multiple-choice", question: "En el número 4.382, ¿cuánto vale el dígito 4?", options: ["400","4.000","40","4"], answer: "4.000" },
+      { id: "mat2_2", type: "fill-in-the-blank", question: "Si tengo 5 billetes de 1.000 y 3 de 100, tengo ___ pesos.", answer: "5.300" },
+      { id: "mat2_3", type: "sort", question: "Ordená de MAYOR a MENOR:", options: ["5.030", "5.300", "5.003", "5.330"], answer:["5.330", "5.300", "5.030", "5.003"] }
+    ],
+    lengua: [
+      { id: "len2_1", type: "multiple-choice", question: "¿Cuál adjetivo queda bien con 'LAS MARIPOSAS'?", options: ["lindos","linda","lindas","lindo"], answer: "lindas" },
+      { id: "len2_2", type: "true-false", question: "En 'El perro fiel', la palabra 'fiel' es un adjetivo.", answer: "true" },
+      { id: "len2_3", type: "fill-in-the-blank", question: "Los adjetivos nos dicen cómo ___ los sustantivos.", answer: "son" }
+    ],
+    sociales: [
+      { id: "soc2_1", type: "multiple-choice", question: "¿Cuál de estos es un recurso natural RENOVABLE?", options: ["Petróleo","Viento y Sol","Gas Natural","Carbón"], answer: "Viento y Sol" },
+      { id: "soc2_2", type: "true-false", question: "El agua es un recurso vital que debemos cuidar.", answer: "true" },
+      { id: "soc2_3", type: "fill-in-the-blank", question: "Los elementos de la naturaleza que usamos se llaman ___ naturales.", answer: "recursos" }
+    ],
+    naturales: [
+      { id: "nat2_1", type: "multiple-choice", question: "¿Qué parte usan los peces para respirar?", options: ["Pulmones","Branquias","Piel","Nariz"], answer: "Branquias" },
+      { id: "nat2_2", type: "true-false", question: "Las aves tienen huesos livianos para poder volar.", answer: "true" },
+      { id: "nat2_3", type: "fill-in-the-blank", question: "Cuando un animal cambia para sobrevivir en su ambiente, se llama ___.", answer: "adaptación" }
+    ]
+  },
+nivel3: {
+    matematica: [
+      { id: "mat3_1", type: "multiple-choice", question: "¿Cuánto es 15.000 + 5.000?", options: ["10.000","20.000","15.500","30.000"], answer: "20.000" },
+      { id: "mat3_2", type: "fill-in-the-blank", question: "Si a 10.000 le saco 2.500, me quedan ___.", answer: "7.500" },
+      { id: "mat3_3", type: "sort", question: "Ordená de MENOR a MAYOR el resultado de estas restas:", options: ["10.000 - 5.000", "10.000 - 1.000", "10.000 - 8.000", "10.000 - 2.000"], answer: ["10.000 - 8.000", "10.000 - 5.000", "10.000 - 2.000", "10.000 - 1.000"] }
+    ],
+    lengua: [
+      { id: "len3_1", type: "multiple-choice", question: "¿Cuál es el SINÓNIMO de 'Rápido'?", options: ["Lento", "Veloz", "Triste", "Quieto"], answer: "Veloz" },
+      { id: "len3_2", type: "fill-in-the-blank", question: "Lo opuesto a 'Oscuridad' es ___.", answer: "luz" },
+      { id: "len3_3", type: "true-false", question: "Las palabras que significan lo contrario se llaman Antónimos.", answer: "true" }
+    ],
+    sociales: [
+      { id: "soc3_1", type: "multiple-choice", question: "¿Qué lugares en Argentina cuidan la naturaleza?", options: ["Los shoppings", "Los parques naturales", "Las fábricas"], answer: "Los parques naturales" },
+      { id: "soc3_2", type: "true-false", question: "Los problemas ambientales afectan a la naturaleza.", answer: "true" },
+      { id: "soc3_3", type: "fill-in-the-blank", question: "Las áreas que cuidan el ambiente se llaman áreas ___.", answer: "protegidas" }
+    ],
+    naturales: [
+      { id: "nat3_1", type: "multiple-choice", question: "¿Qué significa que el hombre es un 'agente modificador'?", options: ["Que no cambia nada", "Que transforma la naturaleza", "Que es un animal"], answer: "Que transforma la naturaleza" },
+      { id: "nat3_2", type: "true-false", question: "Construir un puente es una forma de modificar el ambiente.", answer: "true" },
+      { id: "nat3_3", type: "fill-in-the-blank", question: "Para que el ambiente no se destruya, el hombre debe trabajar en su ___.", answer: "cuidado" }
+    ]
+  },
+  nivel4: {
+    matematica: [
+      { id: "mat4_1", type: "multiple-choice", question: "¿Cuánto es 120 x 100?", options: ["120","1.000","1.200","12.000"], answer: "12.000" },
+      { id: "mat4_2", type: "fill-in-the-blank", question: "Si reparto 400 figuritas entre 5 amigos, a cada uno le tocan ___.", answer: "80" },
+      { id: "mat4_3", type: "sort", question: "Ordená de MENOR a MAYOR:", options: ["50 x 50", "200 x 10", "30 x 90", "40 x 40"], answer: ["40 x 40", "200 x 10", "50 x 50", "30 x 90"] }
+    ],
+    lengua: [
+      { id: "len4_1", type: "multiple-choice", question: "¿Qué narración explica el origen de algo usando magia?", options: ["Noticia", "Leyenda", "Receta"], answer: "Leyenda" },
+      { id: "len4_2", type: "true-false", question: "En las leyendas siempre hay elementos fantásticos.", answer: "true" },
+      { id: "len4_3", type: "fill-in-the-blank", question: "Las palabras que indican acciones son los ___.", answer: "verbos" }
+    ],
+    sociales: [
+      { id: "soc4_1", type: "multiple-choice", question: "¿Cómo se llama la actividad de cultivar plantas?", options: ["Ganadería", "Minería", "Agricultura"], answer: "Agricultura" },
+      { id: "soc4_2", type: "true-false", question: "El campo es el espacio denominado 'urbano'.", answer: "false" },
+      { id: "soc4_3", type: "fill-in-the-blank", question: "El cultivo de plantas es una actividad del espacio ___.", answer: "rural" }
+    ],
+    naturales: [
+      { id: "nat4_1", type: "multiple-choice", question: "¿Qué parte del cuerpo da sostén y protege los órganos?", options: ["La piel", "Los huesos", "El pelo"], answer: "Los huesos" },
+      { id: "nat4_2", type: "true-false", question: "Los huesos y los músculos trabajan juntos.", answer: "true" },
+      { id: "nat4_3", type: "fill-in-the-blank", question: "El sistema que nos permite movernos se llama sistema ___.", answer: "locomotor" }
+    ]
+  },
+  nivel5: {
+    matematica: [
+      { id: "mat5_1", type: "multiple-choice", question: "Si tenés 6 paquetes con 5 figuritas cada uno, ¿cuántas tenés?", options: ["25","30","10"], answer: "30" },
+      { id: "mat5_2", type: "true-false", question: "Multiplicar 8 x 3 es sumar ocho veces el tres.", answer: "true" },
+      { id: "mat5_3", type: "fill-in-the-blank", question: "Completá la serie: 7, 14, 21, ________.", answer: "28" }
+    ],
+    lengua: [
+      { id: "len5_1", type: "fill-in-the-blank", question: "Usamos el diccionario para conocer el _____________ de las palabras.", answer: "significado" },
+      { id: "len5_2", type: "multiple-choice", question: "¿Cómo están ordenadas las palabras en el diccionario?", options: ["Por tamaño","Alfabéticamente","Por importancia"], answer: "Alfabéticamente" },
+      { id: "len5_3", type: "true-false", question: "En el diccionario, 'Casa' aparece antes que 'Entrada'.", answer: "true" }
+    ],
+    sociales: [
+      { id: "soc5_1", type: "multiple-choice", question: "¿Cuántas provincias tiene la Argentina?", options: ["22", "23", "24"], answer: "23" },
+      { id: "soc5_2", type: "true-false", question: "Cada provincia tiene su propio territorio y capital.", answer: "true" },
+      { id: "soc5_3", type: "fill-in-the-blank", question: "Argentina tiene un territorio denominado Capital _________.", answer: "Federal" }
+    ],
+    naturales: [
+      { id: "nat5_1", type: "fill-in-the-blank", question: "Los animales que NO tienen huesos se llaman _______________.", answer: "invertebrados" },
+      { id: "nat5_2", type: "true-false", question: "Una mariposa es un animal vertebrado.", answer: "false" },
+      { id: "nat5_3", type: "multiple-choice", question: "¿Cómo se llaman los animales que tienen columna vertebral?", options: ["Invertebrados", "Vertebrados", "Blandos"], answer: "Vertebrados" }
+    ]
+  },
+  nivel6: {
+    matematica: [
+      { id: "mat6_1", type: "multiple-choice", question: "Si corto un chocolate en 4 partes iguales y me como 1, ¿qué fracción representa lo que comí?", options: ["4/1","1/2","1/4","1/6"], answer: "1/4" },
+      { id: "mat6_2", type: "true-false", question: "En una fracción, el denominador indica en cuántas partes cortamos el entero.", answer: "true" },
+      { id: "mat6_3", type: "fill-in-the-blank", question: "El número de arriba de una fracción se llama ___________.", answer: "numerador" }
+    ],
+    lengua: [
+      { id: "len6_1", type: "fill-in-the-blank", question: "Las palabras con el golpe de voz en la última sílaba se llaman ________.", answer: "agudas" },
+      { id: "len6_2", type: "true-false", question: "La sílaba tónica es la que suena más suave.", answer: "false" },
+      { id: "len6_3", type: "multiple-choice", question: "¿Cómo se llaman las palabras con fuerza en la antepenúltima sílaba?", options: ["graves","agudas","esdrújulas"], answer: "esdrújulas" }
+    ],
+    sociales: [
+      { id: "soc6_1", type: "multiple-choice", question: "¿En qué zona de Argentina podemos encontrar glaciares?", options: ["en el norte", "en el centro", "en el sur"], answer: "en el sur" },
+      { id: "soc6_2", type: "true-false", question: "En el centro predominan las llanuras donde se cultiva trigo.", answer: "true" },
+      { id: "soc6_3", type: "fill-in-the-blank", question: "En el norte de Argentina el clima suele ser muy ___________.", answer: "caluroso" }
+    ],
+    naturales: [
+      { id: "nat6_1", type: "fill-in-the-blank", question: "Los animales que NO tienen huesos se llaman _______________.", answer: "invertebrados" },
+      { id: "nat6_2", type: "true-false", question: "Las bacterias son seres vivos microscópicos.", answer: "true" },
+      { id: "nat6_3", type: "multiple-choice", question: "¿A qué grupo pertenece una araña de 8 patas?", options: ["insectos", "arácnidos", "moluscos"], answer: "arácnidos" }
+    ]
+  },
+  nivel7: {
+    matematica: [
+      { id: "mat7_1", type: "fill-in-the-blank", question: "Una figura que tiene 4 lados iguales y 4 vértices se llama __________.", answer: "cuadrado" },
+      { id: "mat7_2", type: "true-false", question: "Un triángulo es una figura que tiene exactamente 4 lados.", answer: "false" },
+      { id: "mat7_3", type: "multiple-choice", question: "¿Cómo se llaman las 'puntitas' donde se cruzan dos lados?", options: ["líneas", "vértices", "círculos"], answer: "vértices" }
+    ],
+    lengua: [
+      { id: "len7_1", type: "fill-in-the-blank", question: "Después de un _________ (seguido o aparte), siempre se empieza con mayúscula.", answer: "punto" },
+      { id: "len7_2", type: "true-false", question: "El punto sirve para avisar que una idea ha terminado.", answer: "true" },
+      { id: "len7_3", type: "multiple-choice", question: "¿Cuándo se usa obligatoriamente la mayúscula?", options: ["al final de una idea", "en nombres propios y al empezar", "en todas las palabras"], answer: "en nombres propios y al empezar" }
+    ],
+    sociales: [
+      { id: "soc7_1", type: "multiple-choice", question: "¿Qué herramienta es como una foto desde un avión para orientarnos?", options: ["un cuento", "un espejo", "un mapa", "una brújula"], answer: "un mapa" },
+      { id: "soc7_2", type: "true-false", question: "En el mapa de una provincia no se pueden ver los ríos.", answer: "false" },
+      { id: "soc7_3", type: "fill-in-the-blank", question: "Aprender a leer un mapa nos da el superpoder de la _________.", answer: "orientación" }
+    ],
+    naturales: [
+      { id: "nat7_1", type: "fill-in-the-blank", question: "Nacer, ________, reproducirse y morir son las etapas del ciclo de la vida.", answer: "crecer" },
+      { id: "nat7_2", type: "true-false", question: "El ciclo de la vida asegura que siempre haya nuevas generaciones.", answer: "true" },
+      { id: "nat7_3", type: "multiple-choice", question: "¿En qué etapa los seres vivos tienen hijos o semillas?", options: ["nacimiento", "muerte", "reproducción"], answer: "reproducción" }
+    ]
+  },
+  nivel8: {
+    matematica: [
+      { id: "mat8_1", type: "multiple-choice", question: "Para sumar 8+8+8+8+8, ¿qué cuenta es más rápida?", options: ["5 + 8", "5 x 8", "8 - 5"], answer: "5 x 8" },
+      { id: "mat8_2", type: "true-false", question: "Multiplicar es como sumar el mismo número muchas veces.", answer: "true" },
+      { id: "mat8_3", type: "fill-in-the-blank", question: "¿Cuánto es 3 x 7?", answer: "21" }
+    ],
+    lengua: [
+      { id: "len8_1", type: "multiple-choice", question: "INTRUSO: ¿Cuál NO suele aparecer en un cuento maravilloso?", options: ["Un dragón", "Una varita mágica", "Una noticia del diario", "Un hada"], answer: "Una noticia del diario" },
+      { id: "len8_2", type: "true-false", question: "En los cuentos maravillosos, la magia es algo normal.", answer: "true" },
+      { id: "len8_3", type: "fill-in-the-blank", question: "Los personajes como ogros o hadas son personajes _________.", answer: "fantásticos" }
+    ],
+    sociales: [
+      { id: "soc8_1", type: "multiple-choice", question: "¿Quién es la autoridad máxima del municipio?", options: ["El Gobernador", "El Intendente", "El Director"], answer: "El Intendente" },
+      { id: "soc8_2", type: "true-false", question: "Las autoridades locales cuidan las plazas y hospitales.", answer: "true" },
+      { id: "soc8_3", type: "fill-in-the-blank", question: "¿En qué lugar trabajan las autoridades locales?", answer: "municipio" }
+    ],
+    naturales: [
+      { id: "nat8_1", type: "multiple-choice", question: "¿Qué parte de la planta lleva el agua como un ascensor?", options: ["La raíz", "El tallo", "La flor"], answer: "El tallo" },
+      { id: "nat8_2", type: "true-false", question: "Las hojas son las encargadas de respirar.", answer: "true" },
+      { id: "nat8_3", type: "fill-in-the-blank", question: "La parte que sujeta la planta al suelo es la _________.", answer: "raíz" }
+    ]
+  },
+  nivel9: {
+    matematica: [
+      { id: "mat9_1", type: "fill-in-the-blank", question: "Si reparto 20 caramelos entre 2 personas, cada una recibe _________.", answer: "10" },
+      { id: "mat9_2", type: "true-false", question: "Dividir significa repartir una cantidad en partes iguales.", answer: "true" },
+      { id: "mat9_3", type: "multiple-choice", question: "Si repartís 18 chupetines entre 3 amigos, ¿cuántos le das a cada uno?", options: ["12", "6", "5"], answer: "6" }
+    ],
+    lengua: [
+      { id: "len9_1", type: "fill-in-the-blank", question: "La palabra 'Heladería' pertenece a la familia de _________.", answer: "helado" },
+      { id: "len9_2", type: "true-false", question: "Las palabras de una misma familia comparten parte de su significado.", answer: "true" },
+      { id: "len9_3", type: "multiple-choice", question: "¿Cuál NO pertenece a la familia de FLOR?", options: ["florero", "florería", "flotador"], answer: "flotador" }
+    ],
+    sociales: [
+      { id: "soc9_1", type: "multiple-choice", question: "¿Cómo se llama el elemento que se saca de la naturaleza?", options: ["producto final", "materia prima", "fábrica"], answer: "materia prima" },
+      { id: "soc9_2", type: "true-false", question: "La madera de un árbol es una materia prima.", answer: "true" },
+      { id: "soc9_3", type: "fill-in-the-blank", question: "La lana de las ovejas sirve para fabricar un _________.", answer: "pulover" }
+    ],
+    naturales: [
+      { id: "nat9_1", type: "fill-in-the-blank", question: "El proceso por el cual las plantas fabrican su alimento es la _____________.", answer: "fotosíntesis" },
+      { id: "nat9_2", type: "true-false", question: "Las plantas necesitan luz del sol para fabricar su alimento.", answer: "true" },
+      { id: "nat9_3", type: "multiple-choice", question: "¿Qué gas liberan las plantas que nos sirve para respirar?", options: ["dióxido de carbono", "oxígeno", "humo"], answer: "oxígeno" }
+    ]
+  },
+  nivel10: {
+    // IMPORTANTE: En el examen usamos una lista plana de preguntas
+    exámen1: [
+      { id: "ex10_m1", subject: "matematica", type: "multiple-choice", question: "Si tengo 1/4 de chocolate y me regalan otro 1/4, ¿cuánto tengo?", options: ["1 entero", "1/2 (la mitad)", "1/8"], answer: "1/2 (la mitad)" },
+      { id: "ex10_m2", subject: "matematica", type: "true-false", question: "En el número 15.200, el 5 ocupa el lugar de las unidades de mil.", answer: "true" },
+      { id: "ex10_m3", subject: "matematica", type: "fill-in-the-blank", question: "¿Cuánto es 6 x 4?", answer: "24" },
+      { id: "ex10_l1", subject: "lengua", type: "multiple-choice", question: "¿Cuál es ESDRÚJULA?", options: ["Corazón", "Árbol", "Música"], answer: "Música" },
+      { id: "ex10_s1", subject: "sociales", type: "multiple-choice", question: "¿Cuántas provincias tiene la Argentina?", options: ["20", "23", "24"], answer: "23" },
+      { id: "ex10_n3", subject: "naturales", type: "sort", question: "ORDENÁ el ciclo de la vida:", options: ["nacer", "crecer", "reproducirse", "morir"], answer: ["nacer", "crecer", "reproducirse", "morir"] },
+      { id: "ex10_n4", subject: "naturales", type: "fill-in-the-blank", question: "¿Cómo se llaman los animales que NO tienen huesos?", answer: "invertebrados" }
+    ]
+  }
+};  
+nivel11: {
+    matematica: [
+      { id: "mat11_1", type: "fill-in-the-blank", question: "Cálculo rápido: ¿Cuánto es 10.000 + 5.000 + 500?", answer: "15500" },
+      { id: "mat11_2", type: "true-false", question: "En el número 45.000, el 5 vale 5.000 unidades.", answer: "true" },
+      { id: "mat11_3", type: "fill-in-the-blank", question: "El valor de un número depende de su posición; por eso el 5 al principio de 50.000 vale ___________.", answer: "cincuenta mil" } 
+    ], 	
+    lengua: [
+      { id: "len11_1", type: "multiple-choice", question: "¿Cómo se llama el espacio vacío que se deja al principio de un párrafo?", options: ["margen", "punto", "espacio", "sangría"], answer: "sangría" },
+      { id: "len11_2", type: "true-false", question: "Un párrafo es un grupo de oraciones que explican una idea.", answer: "true" },
+      { id: "len11_3", type: "fill-in-the-blank", question: "Para separar un párrafo de otro, usamos el punto y ________.", answer: "aparte" } 
+    ],
+    sociales: [
+      { id: "soc11_1", type: "multiple-choice", question: "¿Cómo se llama el elemento que se saca de la naturaleza?", options: ["producto final", "materia prima", "fábrica", "producto procesado"], answer: "materia prima" },
+      { id: "soc11_2", type: "true-false", question: "Unas zapatillas son un ejemplo de producto elaborado.", answer: "true" },
+      { id: "soc11_3", type: "fill-in-the-blank", question: "La materia prima de las ovejas para un pulover es la ________.", answer: "lana" } 
+    ],
+    naturales: [
+      { id: "nat11_1", type: "multiple-choice", question: "Orden del hongo: 1.Encuentra comida, 2.La descompone, 3.¿Qué hace después?", options: ["se mueve", "lo recicla", "caza un animal", "lo desecha" ], answer: "lo recicla" },
+      { id: "nat11_2", type: "true-false", question: "Los hongos pertenecen al Reino Fungi y son recicladores.", answer: "true" },
+      { id: "nat11_3", type: "multiple-choice", question: "¿De qué se alimentan los hongos?", options: ["luz del sol", "animales vivos", "bacterias", "restos de hojas y madera" ], answer: "restos de hojas y madera" }
+    ]
+  },
+  nivel12: {
+    matematica: [
+      { id: "mat12_1", type: "fill-in-the-blank", question: "El ángulo que 'bosteza' de lo abierto que es se llama ________.", answer: "obtuso" },
+      { id: "mat12_2", type: "multiple-choice", question: "Buscá el intruso: ¿Cuál NO es un tipo de ángulo?", options: ["cuadrado", "agudo", "recto", "llano"], answer: "cuadrado" },
+      { id: "mat12_3", type: "true-false", question: "Un ángulo agudo es más abierto que un ángulo recto.", answer: "false" }
+    ], 	
+    lengua: [
+      { id: "len12_1", type: "multiple-choice", question: "¿A qué conjugación pertenece 'DORMIR'?", options: ["1ª (-AR)", "2ª (-ER)", "3ª (-IR)"], answer: "3ª (-IR)" },
+      { id: "len12_2", type: "true-false", question: "El infinitivo es el nombre del verbo sin conjugar.", answer: "true" },
+      { id: "len12_3", type: "fill-in-the-blank", question: "INFINITIVO: ¿Cuál es el nombre del verbo 'Comimos'?", answer: "comer" }
+    ],
+    sociales: [
+      { id: "soc12_1", type: "multiple-choice", question: "¿Cómo se llama cuando se cortan demasiados árboles?", options: ["Contaminación", "deforestación", "reciclaje"], answer: "deforestación" },
+      { id: "soc12_2", type: "multiple-choice", question: "Daño ambiental: 1.Actividad humana, 2.Contaminación, 3.¿Qué sucede?", options: ["la naturaleza se daña", "mejora", "no pasa nada"], answer: "la naturaleza se daña" },
+      { id: "soc12_3", type: "fill-in-the-blank", question: "Ensuciar el agua, aire o suelo es producir _______________.", answer: "contaminación" }
+    ],
+    naturales: [
+      { id: "nat12_1", type: "fill-in-the-blank", question: "Con el microscopio podemos ver las ________ que nos forman.", answer: "células" },
+      { id: "nat12_2", type: "true-false", question: "El microscopio usa lentes potentes para agrandar imágenes.", answer: "true" },
+      { id: "nat12_3", type: "multiple-choice", question: "Para ver bacterias usamos el...", options: ["microscopio", "telescopio", "binoculares"],  answer: "microscopio" }
+    ]
+  },
+nivel13: {
+    matematica: [
+      { id: "mat13_1", type: "true-false", question: "Un octavo (1/8) es una parte más pequeña que un medio (1/2).", answer: "true" },
+      { id: "mat13_2", type: "fill-in-the-blank", question: "Si divido un alfajor en 4, cada parte es un ________.", answer: "cuarto" },
+      { id: "mat13_3", type: "fill-in-the-blank", question: "EQUIVALENCIA: ¿Cuántos medios (1/2) forman un kilo (1)?", answer: "2" } 
+    ], 	
+    lengua: [
+      { id: "len13_1", type: "fill-in-the-blank", question: "Para no repetir siempre la misma palabra, usamos los ___________.", answer: "sinónimos" },
+      { id: "len13_2", type: "true-false", question: "El antónimo de 'aburrido' es 'divertido'.", answer: "true" },
+      { id: "len13_3", type: "multiple-choice", question: "¿Qué son las palabras opuestas como 'alto' y 'bajo'?", options: ["sinónimos", "antónimos", "infinitivos"], answer: "antónimos" } 
+    ],
+    sociales: [
+      { id: "soc13_1", type: "fill-in-the-blank", question: "El gobierno más cercano a tu barrio es el _________.", answer: "municipio" },
+      { id: "soc13_2", type: "multiple-choice", question: "¿Quién lidera el equipo del Municipio?", options: ["el intendente", "el gobernador", "el presidente"], answer: "el intendente" },
+      { id: "soc13_3", type: "true-false", question: "El Municipio se encarga de cuidar las plazas y juntar la basura.", answer: "true" } 
+    ],
+    naturales: [
+      { id: "nat13_1", type: "multiple-choice", question: "CAMINO DE LA COMIDA: 1.boca, 2.esófago, 3.estómago, 4.¿Qué sigue?", options: ["cerebro", "intestinos", "dientes", "hígado"], answer: "intestinos" },
+      { id: "nat13_2", type: "fill-in-the-blank", question: "El órgano que funciona como una licuadora es el _________.", answer: "estómago" },
+      { id: "nat13_3", type: "multiple-choice", question: "¿Cuál NO es parte del sistema digestivo?", options: ["estómago", "boca", "pulmones", "esófago"], answer: "pulmones" } 
+    ]
+  },
+  nivel14: {
+    matematica: [
+      { id: "mat14_1", type: "fill-in-the-blank", question: "TRUCO DE MAGIA: ¿Cuánto es 45 x 100?", answer: "4500" },
+      { id: "mat14_2", type: "true-false", question: "Para multiplicar por 1.000, le agregamos tres ceros al final.", answer: "true" },
+      { id: "mat14_3", type: "multiple-choice", question: "Si tengo 8 billetes de $1.000, ¿cuánto dinero tengo?", options: ["80", "800", "8.000", "80.000"], answer: "8.000" } 
+    ], 	
+    lengua: [
+      { id: "len14_1", type: "multiple-choice", question: "¿Cuál NO es una pregunta para entender una noticia?", options: ["¿Qué pasó?", "¿Dónde ocurrió?", "¿Qué día es hoy?"], answer: "¿Qué día es hoy?" },
+      { id: "len14_2", type: "fill-in-the-blank", question: "La noticia es un texto que cuenta un hecho que es _________.", answer: "real" },
+      { id: "len14_3", type: "multiple-choice", question: "¿Cómo se llama el textito debajo de la foto en una noticia?", options: ["cuento", "epígrafe", "carta"], answer: "epígrafe" } 
+    ],
+    sociales: [
+      { id: "soc14_1", type: "fill-in-the-blank", question: "Las energías que no se terminan (como el sol) se llaman _________.", answer: "limpias" },
+      { id: "soc14_2", type: "multiple-choice", question: "¿Cuál es un recurso NO renovable?", options: ["viento", "sol", "petróleo", "agua"], answer: "petróleo" },
+      { id: "soc14_3", type: "true-false", question: "Los recursos no renovables tardan millones de años en formarse.", answer: "true" } 
+    ],
+    naturales: [
+      { id: "nat14_1", type: "fill-in-the-blank", question: "¿Qué gas expulsamos del cuerpo porque no nos sirve?", answer: "dióxido de carbono" },
+      { id: "nat14_2", type: "true-false", question: "Cuando los pulmones reciben aire, se inflan como globos.", answer: "true" },
+      { id: "nat14_3", type: "multiple-choice", question: "CAMINO DEL AIRE: 1.Nariz, 2.Tráquea, 3.¿A dónde llega?", options: ["corazón", "pulmones", "estómago"], answer: "pulmones" } 
+    ]
+  },
+  nivel15: {
+    matematica: [
+      { id: "mat15_1", type: "multiple-choice", question: "Si reparto 10 tortillas entre 3 y sobra una, ¿cómo se llama lo que sobra?", options: ["resultado", "resto", "suma"], answer: "resto" },
+      { id: "mat15_2", type: "true-false", question: "Si reparto 13 humitas entre 4, sobra exactamente 1.", answer: "true" },
+      { id: "mat15_3", type: "fill-in-the-blank", question: "Si tengo 11 higos para 2 amigos, ¿cuántos sobran?", answer: "1" } 
+    ], 	
+    lengua: [
+      { id: "len15_1", type: "multiple-choice", question: "PARTES DE LA CARTA: Saludo, Cuerpo, Despedida y...", options: ["firma", "título", "explicación"], answer: "firma" },
+      { id: "len15_2", type: "multiple-choice", question: "¿Cuál NO es un saludo para una carta?", options: ["Hola Aitana", "Estimado Director", "Había una vez"], answer: "Había una vez" },
+      { id: "len15_3", type: "true-false", question: "La carta sirve para contar algo con más detalle.", answer: "true" } 
+    ],
+    sociales: [
+      { id: "soc15_1", type: "fill-in-the-blank", question: "Saber cuántos somos ayuda a saber si necesitamos más _________.", answer: "escuelas" },
+      { id: "soc15_2", type: "true-false", question: "La población son todas las personas que habitan el país.", answer: "true" },
+      { id: "soc15_3", type: "multiple-choice", question: "¿Cómo se llama el estudio para contar a las personas?", options: ["censo", "examen", "encuesta"], answer: "censo" } 
+    ],
+    naturales: [
+      { id: "nat15_1", type: "multiple-choice", question: "¿Cuál NO es parte del sistema circulatorio?", options: ["venas", "arterias", "tráquea", "corazón"], answer: "tráquea" },
+      { id: "nat15_2", type: "true-false", question: "Las arterias llevan la sangre con oxígeno a todo el cuerpo.", answer: "true" },
+      { id: "nat15_3", type: "fill-in-the-blank", question: "¿Cuál es el motor que bombea la sangre?", answer: "corazón" } 
+    ]
+  },
+  nivel16: {
+    matematica: [
+      { id: "mat16_1", type: "fill-in-the-blank", question: "PERÍMETRO: Si un cuadrado tiene 4 lados de 3cm, ¿cuánto suma el borde?", answer: "12" },
+      { id: "mat16_2", type: "true-false", question: "El perímetro es la suma de todos los lados de una figura.", answer: "true" },
+      { id: "mat16_3", type: "multiple-choice", question: "¿Perímetro de un triángulo con 3 lados de 5cm?", options: ["10 cm", "15 cm", "20 cm"], answer: "15 cm" } 
+    ], 	
+    lengua: [
+      { id: "len16_1", type: "multiple-choice", question: "¿Cuál de estos NO es un prefijo (va adelante)?", options: ["des-", "anti-", "-ero", "pre-"], answer: "-ero" },
+      { id: "len16_2", type: "fill-in-the-blank", question: "¿Cómo se llama el pedacito que se pega ATRÁS de la palabra?", answer: "sufijo" },
+      { id: "len16_3", type: "fill-in-the-blank", question: "Si a 'igual' le agrego el prefijo 'des-', formo: __________.", answer: "desigual" } 
+    ],
+    sociales: [
+      { id: "soc16_1", type: "multiple-choice", question: "Cuando los pueblos aprenden a sembrar se vuelven...", options: ["sedentarios", "nómades", "exploradores"], answer: "sedentarios" },
+      { id: "soc16_2", type: "multiple-choice", question: "¿Cómo se llamaban los grupos que se mudaban siempre?", options: ["sedentarios", "nómades", "vecinos"], answer: "nómades" },
+      { id: "soc16_3", type: "true-false", question: "Los sedentarios construyeron casas firmes.", answer: "true" } 
+    ],
+    naturales: [
+      { id: "nat16_1", type: "multiple-choice", question: "¿Qué órganos filtran la sangre?", options: ["pulmones", "riñones", "intestinos"], answer: "riñones" },
+      { id: "nat16_2", type: "true-false", question: "El sistema excretor saca los desechos del cuerpo.", answer: "true" },
+      { id: "nat16_3", type: "fill-in-the-blank", question: "Los riñones transforman los desechos en _________.", answer: "orina" } 
+    ]
+  },
+  nivel17: {
+    matematica: [
+      { id: "mat17_1", type: "true-false", question: "Al sumar fracciones con el mismo denominador, este se queda igual.", answer: "true" },
+      { id: "mat17_2", type: "fill-in-the-blank", question: "SUMA: ¿Cuánto es 1/8 + 2/8?", answer: "3/8" },
+      { id: "mat17_3", type: "multiple-choice", question: "Si comés 4 porciones de una pizza de 8, ¿qué fracción es?", options: ["4/8", "1/8", "8/4"], answer: "4/8" } 
+    ], 	
+    lengua: [
+      { id: "len17_1", type: "multiple-choice", question: "¿Cómo se llama la enseñanza que deja una fábula?", options: ["título", "moraleja", "prólogo"], answer: "moraleja" },
+      { id: "len17_2", type: "multiple-choice", question: "¿Cuál NO suele ser un personaje de fábula?", options: ["una tortuga", "un avión", "un león"], answer: "un avión" },
+      { id: "len17_3", type: "fill-in-the-blank", question: "En las fábulas, los personajes casi siempre son _________.", answer: "animales" } 
+    ],
+    sociales: [
+      { id: "soc17_1", type: "multiple-choice", question: "Los Diaguitas hacían escalones en los cerros para...", options: ["plantar", "jugar", "viajar"], answer: "plantar" },
+      { id: "soc17_2", type: "true-false", question: "Los Guaraníes usaban canoas para viajar por los ríos.", answer: "true" },
+      { id: "soc17_3", type: "fill-in-the-blank", question: "¿Qué pueblo usaba plantas de la selva para curarse?", answer: "guaraníes" } 
+    ],
+    naturales: [
+      { id: "nat17_1", type: "multiple-choice", question: "¿Cuál de estos NO ayuda a tu higiene?", options: ["bañarse", "lavarse las manos", "comer caramelos sin cepillarse"], answer: "comer caramelos sin cepillarse" },
+      { id: "nat17_2", type: "true-false", question: "Lavarse las manos elimina microbios invisibles.", answer: "true" },
+      { id: "nat17_3", type: "fill-in-the-blank", question: "Estar sano significa que tu cuerpo y tu _________ se sienten bien.", answer: "mente" } 
+    ]
+  },
+  nivel18: {
+    matematica: [
+      { id: "mat18_1", type: "fill-in-the-blank", question: "¿Cuántos centímetros tiene 1 metro?", answer: "100" },
+      { id: "mat18_2", type: "true-false", question: "El centímetro se usa para medir cosas chiquitas.", answer: "true" },
+      { id: "mat18_3", type: "multiple-choice", question: "Si un nene mide 1 metro y 20 cm, ¿cuántos cm son en total?", options: ["120 cm", "102 cm", "200 cm"], answer: "120 cm" } 
+    ], 	
+    lengua: [
+      { id: "len18_1", type: "multiple-choice", question: "¿Cuál NO es un adverbio de LUGAR?", options: ["aquí", "lejos", "mañana"], answer: "mañana" },
+      { id: "len18_2", type: "fill-in-the-blank", question: "¿Qué pregunta responden los adverbios de TIEMPO?", answer: "cuándo" },
+      { id: "len18_3", type: "fill-in-the-blank", question: "Los adverbios dan más información en la _________.", answer: "oración" } 
+    ],
+    sociales: [
+      { id: "soc18_1", type: "multiple-choice", question: "¿Qué animal trajeron los europeos a América?", options: ["llamas", "caballos", "yaguaretés"], answer: "caballos" },
+      { id: "soc18_2", type: "true-false", question: "En la Conquista se prohibió a los indígenas hablar su idioma.", answer: "true" },
+      { id: "soc18_3", type: "multiple-choice", question: "¿Qué más trajeron los barcos además de animales?", options: ["enfermedades", "regalos", "oro"], answer: "enfermedades" } 
+    ],
+    naturales: [
+      { id: "nat18_1", type: "multiple-choice", question: "¿Cuál NO te da energía saludable?", options: ["frutas", "cereales", "gaseosas"], answer: "gaseosas" },
+      { id: "nat18_2", type: "true-false", question: "Las proteínas son los ladrillos de tus músculos.", answer: "true" },
+      { id: "nat18_3", type: "fill-in-the-blank", question: "Las frutas y verduras son el equipo de _________ de tu cuerpo.", answer: "mantenimiento" } 
+    ]
+  },
+  nivel19: {
+    matematica: [
+      { id: "mat19_1", type: "multiple-choice", question: "En un gráfico de barras, ¿cuál es la opción ganadora?", options: ["la más alta", "la más baja", "la sin color"], answer: "la más alta" },
+      { id: "mat19_2", type: "true-false", question: "Los gráficos sirven para organizar información.", answer: "true" },
+      { id: "mat19_3", type: "fill-in-the-blank", question: "¿Cómo se llama el dibujo para ver resultados de encuestas?", answer: "gráfico de barras" } 
+    ],
+    lengua: [
+      { id: "len19_1", type: "fill-in-the-blank", question: "¿Qué pronombre reemplaza a 'Aitana y yo'?", answer: "nosotros" },
+      { id: "len19_2", type: "multiple-choice", question: "¿Cuál NO es un pronombre personal?", options: ["ella", "vos", "correr"], answer: "correr" },
+      { id: "len19_3", type: "fill-in-the-blank", question: "Los pronombres sirven para reemplazar al _________.", answer: "nombre" } 
+    ],
+    sociales: [
+      { id: "soc19_1", type: "fill-in-the-blank", question: "Quién vendía comida 'para las viejas sin dientes' era la...", answer: "mazamorrera" },
+      { id: "soc19_2", type: "true-false", question: "En 1810 el agua se compraba al aguatero.", answer: "true" },
+      { id: "soc19_3", type: "multiple-choice", question: "¿A qué jugaban los chicos en la Colonia?", options: ["videojuegos", "trompo y balero", "internet"], answer: "trompo y balero" } 
+    ],
+    naturales: [
+      { id: "nat19_1", type: "multiple-choice", question: "¿Qué sentido usa tus orejas?", options: ["vista", "oído", "tacto"], answer: "oído" },
+      { id: "nat19_2", type: "true-false", question: "Tus ojos funcionan como cámaras que captan la luz.", answer: "true" },
+      { id: "nat19_3", type: "fill-in-the-blank", question: "Tus sentidos funcionan como _________ para conocer el mundo.", answer: "radares" } 
+    ]
+  },
+  nivel20: {
+    exámen2: [
+      { id: "ex20_m1", subject: "matematica", type: "multiple-choice", question: "3 billetes de $100 y 8 de $10, ¿cuánto es?", options: ["$308", "$380", "$830"], answer: "$380" },
+      { id: "ex20_m2", subject: "matematica", type: "true-false", question: "En el 4.560, el 5 vale 500 (centenas).", answer: "true" },
+      { id: "ex20_m3", subject: "matematica", type: "fill-in-the-blank", question: "¿Cuánto es 8 x 3?", answer: "24" },
+      { id: "ex20_l1", subject: "lengua", type: "multiple-choice", question: "¿Cuál NO es un sustantivo común?", options: ["Perro", "Mesa", "Aitana", "Libro"], answer: "Aitana" },
+      { id: "ex20_s1", subject: "sociales", type: "multiple-choice", question: "¿Por dónde se oculta el Sol?", options: ["Norte", "Oeste", "Este"], answer: "Oeste" },
+      { id: "ex20_n1", subject: "naturales", type: "multiple-choice", question: "¿Qué parte de la planta fabrica las semillas?", options: ["Raíz", "Flor", "Tallo"], answer: "Flor" },
+      { id: "ex20_n4", subject: "naturales", type: "fill-in-the-blank", question: "¿Cómo se llama el material que se rompe fácil (vidrio)?", answer: "frágil" }
+    ]
+  }
+};  
+nivel21: {
+    matematica: [
+      { id: "mat21_1", type: "multiple-choice", question: "Si el número 100.000 es como llenar dos estadios, ¿cuántas cifras tiene?", options: ["5 cifras", "6 cifras", "4 cifras"], answer: "6 cifras" },
+      { id: "mat21_2", type: "true-false", question: "El punto en los números grandes sirve para separar los miles y no perderse.", answer: "true" },
+      { id: "mat21_3", type: "fill-in-the-blank", question: "En el número 100.000, ¿cuánto vale el 1 si está en la centena de mil?", answer: "cien mil" }
+    ],
+    lengua: [
+      { id: "len21_1", type: "multiple-choice", question: "INTRUSO: ¿Cuál de estas palabras está MAL escrita?", options: ["invitar", "inbierno", "blanco", "brazo"], answer: "inbierno" },
+      { id: "len21_2", type: "true-false", question: "La letra B siempre va de la mano con la L y la R (como en blanco).", answer: "true" },
+      { id: "len21_3", type: "fill-in-the-blank", question: "La letra V es muy amiga de la letra _________ (como en invitar).", answer: "n" }
+    ],
+    sociales: [
+      { id: "soc21_1", type: "multiple-choice", question: "¿Dónde se reunió la gente en mayo de 1810 para formar el primer gobierno?", options: ["en el puerto", "frente al cabildo", "en una escuela"], answer: "frente al cabildo" },
+      { id: "soc21_2", type: "true-false", question: "La Primera Junta se formó porque el pueblo quería elegir su propio destino.", answer: "true" },
+      { id: "soc21_3", type: "fill-in-the-blank", question: "¿Cómo se llamó el primer gobierno patrio nacido en mayo?", answer: "primera junta" }
+    ],
+    naturales: [
+      { id: "nat21_1", type: "multiple-choice", question: "¿Por qué los líquidos cambian de forma?", options: ["porque sus piezas están apretadas", "porque sus piezas están sueltas y bailan", "porque no tienen piezas"], answer: "porque sus piezas están sueltas y bailan" },
+      { id: "nat21_2", type: "true-false", question: "En los sólidos, las piezas están tan apretadas que no se mueven.", answer: "true" },
+      { id: "nat21_3", type: "fill-in-the-blank", question: "El agua toma la forma del vaso porque es un material _________.", answer: "líquido" }
+    ]
+  },
+  nivel22: {
+    matematica: [
+      { id: "mat22_1", type: "multiple-choice", question: "¿Cómo se llama el triángulo que tiene sus 3 lados exactamente iguales?", options: ["isósceles", "escaleno", "equilátero"], answer: "equilátero" },
+      { id: "mat22_2", type: "true-false", question: "El triángulo Escaleno es el 'rebelde' porque tiene todos sus lados distintos.", answer: "true" },
+      { id: "mat22_3", type: "fill-in-the-blank", question: "¿Qué triángulo tiene 2 lados iguales y uno distinto?", answer: "isósceles" }
+    ],
+    lengua: [
+      { id: "len22_1", type: "multiple-choice", question: "Si digo 'Aitana estudió', ¿en qué tiempo está el verbo?", options: ["presente", "pasado", "futuro"], answer: "pasado" },
+      { id: "len22_2", type: "true-false", question: "El tiempo Presente indica que la acción está pasando ahora mismo.", answer: "true" },
+      { id: "len22_3", type: "fill-in-the-blank", question: "¿Cómo dirías el verbo 'ESTUDIAR' en presente para Aitana?", answer: "estudia" }
+    ],
+    sociales: [
+      { id: "soc22_1", type: "multiple-choice", question: "¿A orillas de qué río se izó la bandera argentina por primera vez?", options: ["Río Luján", "Río Paraná", "Río de la Plata"], answer: "Río Paraná" },
+      { id: "soc22_2", type: "true-false", question: "Belgrano eligió los colores porque ya se usaban en las escarapelas.", answer: "true" },
+      { id: "soc22_3", type: "fill-in-the-blank", question: "Manuel Belgrano creía que el superpoder de los niños era la _________.", answer: "educación" }
+    ],
+    naturales: [
+      { id: "nat22_1", type: "multiple-choice", question: "INTRUSO: ¿Cuál de estas es una mezcla HETEROGÉNEA (se ven las partes)?", options: ["ensalada de frutas", "agua con aceite", "perfume"], answer: "perfume" },
+      { id: "nat22_2", type: "true-false", question: "En las mezclas homogéneas parece que hay una sola cosa.", answer: "true" },
+      { id: "nat22_3", type: "fill-in-the-blank", question: "¿Qué herramienta usarías para separar agua y fideos?", answer: "colador" }
+    ]
+  },
+  nivel23: {
+    matematica: [
+      { id: "mat23_1", type: "multiple-choice", question: "Para dividir por 32, el redondeo dice que es mejor pensarlo como...", options: ["30", "50", "10"], answer: "30" },
+      { id: "mat23_2", type: "multiple-choice", question: "Tenés 90 para 21. Probamos con 5: 5x21=105. ¿Qué pasó?", options: ["¡Me pasé!", "¡Me falta mucho!", "¡Perfecto!"], answer: "¡Me pasé!" },
+      { id: "mat23_3", type: "fill-in-the-blank", question: "Si el 5 se pasó, ¿con qué número probarías ahora?", answer: "4" }
+    ],
+    lengua: [
+      { id: "len23_1", type: "multiple-choice", question: "¿Qué tipo de texto te da información real sobre un tema?", options: ["cuento", "texto expositivo", "fábula"], answer: "texto expositivo" },
+      { id: "len23_2", type: "true-false", question: "Los subtítulos sirven para organizar la información.", answer: "true" },
+      { id: "len23_3", type: "fill-in-the-blank", question: "El texto cortito que explica una foto se llama _________.", answer: "epígrafe" }
+    ],
+    sociales: [
+      { id: "soc23_1", type: "multiple-choice", question: "¿Cómo cruzó San Martín la cordillera?", options: ["en avión", "a caballo y mula", "en camiones"], answer: "a caballo y mula" },
+      { id: "soc23_2", type: "true-false", question: "El Cruce de los Andes se logró gracias a la organización.", answer: "true" },
+      { id: "soc23_3", type: "fill-in-the-blank", question: "¿Cuántos hombres acompañaron a San Martín?", answer: "5.000" }
+    ],
+    naturales: [
+      { id: "nat23_1", type: "multiple-choice", question: "CICLO DEL AGUA: 1.Evaporación, 2.Condensación, 3.¿Cómo se llama la lluvia?", options: ["Precipitación", "Calefacción", "Inundación"], answer: "Precipitación" },
+      { id: "nat23_2", type: "true-false", question: "El Sol calienta el agua para que comience el ciclo.", answer: "true" },
+      { id: "nat23_3", type: "fill-in-the-blank", question: "Cuando el vapor sube y forma las nubes, es la _________.", answer: "condensación" }
+    ]
+  },
+  nivel24: {
+    matematica: [
+      { id: "mat24_1", type: "multiple-choice", question: "En $15,50, ¿qué son los números a la derecha de la coma?", options: ["Los pesos enteros", "Los centavos", "Los billetes"], answer: "Los centavos" },
+      { id: "mat24_2", type: "true-false", question: "Necesitás 100 centavos para formar 1 peso.", answer: "true" },
+      { id: "mat24_3", type: "fill-in-the-blank", question: "Si un caramelo cuesta $0,50, ¿cuántos necesitás para 1 peso?", answer: "2" }
+    ],
+    lengua: [
+      { id: "len24_1", type: "multiple-choice", question: "INTRUSO: ¿Cuál de estas palabras suena FUERTE (como la J)?", options: ["Gato", "Gusano", "Gente", "Gota"], answer: "Gente" },
+      { id: "len24_2", type: "true-false", question: "En la palabra 'Guitarra', la U es un guardaespaldas mudo.", answer: "true" },
+      { id: "len24_3", type: "fill-in-the-blank", question: "Para que la G suene suave con la E (Guerra), usamos la letra ___.", answer: "u" }
+    ],
+    sociales: [
+      { id: "soc24_1", type: "sort", question: "ORDENÁ estos derechos del niño:", options: ["tener un nombre", "ir a la escuela", "poder jugar", "tener salud"], answer: ["tener un nombre", "ir a la escuela", "poder jugar", "tener salud"] },
+      { id: "soc24_2", type: "true-false", question: "Los derechos son solo para los niños que nacieron en Argentina.", answer: "false" },
+      { id: "soc24_3", type: "multiple-choice", question: "¿Cómo se llama a la protección de los niños?", options: ["Capa mágica", "Armadura invisible", "Escudo de metal"], answer: "Armadura invisible" }
+    ],
+    naturales: [
+      { id: "nat24_1", type: "multiple-choice", question: "¿Qué sucede si juntás Polo Norte con otro Polo Norte?", options: ["Se pegan", "Se atraen", "Se empujan"], answer: "Se empujan" },
+      { id: "nat24_2", type: "true-false", question: "La brújula marca el Norte por la fuerza magnética de la Tierra.", answer: "true" },
+      { id: "nat24_3", type: "fill-in-the-blank", question: "Completá: 'Polos opuestos se _________'.", answer: "atraen" }
+    ]
+  },
+  nivel25: {
+    matematica: [
+      { id: "mat25_1", type: "multiple-choice", question: "Si comés 1/2 de chocolate y tu amiga 2/4, ¿quién comió más?", options: ["Yo", "Mi amiga", "Lo mismo"], answer: "Lo mismo" },
+      { id: "mat25_2", type: "true-false", question: "Las fracciones equivalentes valen la misma cantidad.", answer: "true" },
+      { id: "mat25_3", type: "fill-in-the-blank", question: "¿Cómo se les dice a las fracciones 'gemelas'?", answer: "equivalentes" }
+    ],
+    lengua: [
+      { id: "len25_1", type: "multiple-choice", question: "¿Por qué hay una rima en 'La ballena Elena es buena'?", options: ["Habla de ballenas", "Terminan parecido", "Es una noticia"], answer: "Terminan parecido" },
+      { id: "len25_2", type: "true-false", question: "La poesía se lee casi como si estuvieras cantando.", answer: "true" },
+      { id: "len25_3", type: "fill-in-the-blank", question: "¿Qué palabra rima con 'Aitana'?", answer: "ventana" }
+    ],
+    sociales: [
+      { id: "soc25_1", type: "sort", question: "ORDENÁ quién debe cumplir la Constitución:", options: ["el presidente", "los jueces", "los ciudadanos", "los niños"], answer: ["el presidente", "los jueces", "los ciudadanos", "los niños"] },
+      { id: "soc25_2", type: "true-false", question: "La Constitución es el 'manual de instrucciones' del país.", answer: "true" },
+      { id: "soc25_3", type: "multiple-choice", question: "¿Qué dice la Constitución sobre la educación?", options: ["Solo para algunos", "Libres de aprender", "No es importante"], answer: "Libres de aprender" }
+    ],
+    naturales: [
+      { id: "nat25_1", type: "multiple-choice", question: "SOMBRA: 1.Luz arriba (chica), 2.Luz bajando, 3.Luz muy baja...", options: ["Sombra muy larga", "Sombra desaparece", "Sombra redonda"], answer: "Sombra muy larga" },
+      { id: "nat25_2", type: "true-false", question: "La luz viaja siempre en línea recta.", answer: "true" },
+      { id: "nat25_3", type: "fill-in-the-blank", question: "¿Qué objeto bloquea la luz para formar tu sombra?", answer: "mi cuerpo" }
+    ]
+  },
+  nivel26: {
+    matematica: [
+      { id: "mat26_1", type: "multiple-choice", question: "¿Qué unidad usarías para pesar un clip de papel?", options: ["El Kilo", "El Gramo", "La Tonelada"], answer: "El Gramo" },
+      { id: "mat26_2", type: "true-false", question: "Un kilo es más pesado que un gramo.", answer: "true" },
+      { id: "mat26_3", type: "fill-in-the-blank", question: "¿Cuántos gramos forman 1 kilo?", answer: "1000" }
+    ],
+    lengua: [
+      { id: "len26_1", type: "multiple-choice", question: "¿Quién es el SUJETO en 'El gato salta en el sillón'?", options: ["El sillón", "El gato", "Salta"], answer: "El gato" },
+      { id: "len26_2", type: "true-false", question: "El Predicado nos dice qué hace el protagonista.", answer: "true" },
+      { id: "len26_3", type: "fill-in-the-blank", question: "En 'Aiti estudia', la palabra 'Aiti' es el _________.", answer: "sujeto" }
+    ],
+    sociales: [
+      { id: "soc26_1", type: "multiple-choice", question: "¿Cómo es el voto para que nadie te obligue?", options: ["Público", "Secreto", "Opcional"], answer: "Secreto" },
+      { id: "soc26_2", type: "true-false", question: "Democracia significa que todos decidimos en equipo.", answer: "true" },
+      { id: "soc26_3", type: "fill-in-the-blank", question: "¿Cómo eligen los adultos quién cuida el país?", answer: "voto" }
+    ],
+    naturales: [
+      { id: "nat26_1", type: "multiple-choice", question: "¿Cómo viaja el sonido hasta tu oído?", options: ["Por cables", "Como onditas", "Telepatía"], answer: "Como onditas" },
+      { id: "nat26_2", type: "true-false", question: "La vibración es el movimiento que genera el sonido.", answer: "true" },
+      { id: "nat26_3", type: "fill-in-the-blank", question: "Si hacés un sonido fuerte y te tocás la garganta, sentís...", answer: "vibración" }
+    ]
+  },
+  nivel27: {
+    matematica: [
+      { id: "mat27_1", type: "multiple-choice", question: "Si una pirámide tiene base cuadrada, ¿cuántos vértices tiene?", options: ["4", "5", "3"], answer: "5" },
+      { id: "mat27_2", type: "true-false", question: "El cubo tiene volumen y ocupa lugar en el espacio.", answer: "true" },
+      { id: "mat27_3", type: "fill-in-the-blank", question: "¿Cómo se llaman las líneas donde se unen dos caras?", answer: "aristas" }
+    ],
+    lengua: [
+      { id: "len27_1", type: "sort", question: "ORDENÁ cronológicamente:", options: ["primero, preparé la mochila", "luego, subí al micro", "después, entramos al aula", "finalmente, sonó el timbre"], answer: ["primero, preparé la mochila", "luego, subí al micro", "después, entramos al aula", "finalmente, sonó el timbre"] },
+      { id: "len27_2", type: "true-false", question: "'Luego' y 'finalmente' sirven para entender el orden.", answer: "true" },
+      { id: "len27_3", type: "multiple-choice", question: "¿Qué conector usarías para algo que pasó AL MISMO TIEMPO?", options: ["Mientras tanto", "Primero", "Al final"], answer: "Mientras tanto" }
+    ],
+    sociales: [
+      { id: "soc27_1", type: "multiple-choice", question: "¿Por qué Argentina es un 'mosaico' de culturas?", options: ["Pensamos igual", "Muchos países y pueblos", "Una sola comida"], answer: "Muchos países y pueblos" },
+      { id: "soc27_2", type: "true-false", question: "La diversidad cultural nos enriquece como país.", answer: "true" },
+      { id: "soc27_3", type: "multiple-choice", question: "INTRUSO: ¿Qué NO forma parte de la identidad cultural?", options: ["Música", "Idioma", "Clima de hoy", "Comidas"], answer: "Clima de hoy" }
+    ],
+    naturales: [
+      { id: "nat27_1", type: "multiple-choice", question: "¿Qué material elegirías para una cuchara y NO quemarte?", options: ["Metal", "Madera", "Vidrio"], answer: "Madera" },
+      { id: "nat27_2", type: "true-false", question: "Un material elástico recupera su forma original.", answer: "true" },
+      { id: "nat27_3", type: "fill-in-the-blank", question: "¿Cómo se llama lo que se rompe sin deformarse?", answer: "fragilidad" }
+    ]
+  },
+  nivel28: {
+    matematica: [
+      { id: "mat28_1", type: "multiple-choice", question: "MULTIPLICAR: 1.Unidades, 2.Pasito al costado, 3.¿Qué sigue?", options: ["Sumar resultados", "Restar todo", "Borrar"], answer: "Sumar resultados" },
+      { id: "mat28_2", type: "true-false", question: "Al multiplicar por la segunda cifra, se deja un lugar vacío.", answer: "true" },
+      { id: "mat28_3", type: "fill-in-the-blank", question: "¿Cómo hay que escribir los números para que la suma salga bien?", answer: "ordenaditos" }
+    ],
+    lengua: [
+      { id: "len28_1", type: "multiple-choice", question: "¿Qué diferencia a la Crónica de una noticia?", options: ["Es más corta", "Cuenta todo minuto a minuto", "Es un invento"], answer: "Cuenta todo minuto a minuto" },
+      { id: "len28_2", type: "true-false", question: "La crónica sirve para contar partidos o viajes.", answer: "true" },
+      { id: "len28_3", type: "fill-in-the-blank", question: "La crónica es como una _________ escrita.", answer: "película" }
+    ],
+    sociales: [
+      { id: "soc28_1", type: "multiple-choice", question: "¿En qué llegaban los inmigrantes de Italia o España?", options: ["En avión", "En barcos gigantes", "En tren"], answer: "En barcos gigantes" },
+      { id: "soc28_2", type: "true-false", question: "Muchos venían por guerras o falta de comida.", answer: "true" },
+      { id: "soc28_3", type: "fill-in-the-blank", question: "¿Qué traían además de ropa (recetas, canciones)?", answer: "ganas de trabajar" }
+    ],
+    naturales: [
+      { id: "nat28_1", type: "multiple-choice", question: "¿Qué pasa si frotás un globo en tu pulóver?", options: ["Explota", "Cargas saltan de golpe", "Nada"], answer: "Cargas saltan de golpe" },
+      { id: "nat28_2", type: "true-false", question: "La electricidad estática es como un rayo minúsculo.", answer: "true" },
+      { id: "nat28_3", type: "fill-in-the-blank", question: "¿Cómo se llama la energía que está quieta y salta?", answer: "electricidad estática" }
+    ]
+  },
+  nivel29: {
+    matematica: [
+      { id: "mat29_1", type: "sort", question: "ORDENÁ los precios (1 alfajor = $10):", options: ["1 alfajor = $10", "2 alfajores = $20", "3 alfajores = $30", "4 alfajores = $40"], answer: ["1 alfajor = $10", "2 alfajores = $20", "3 alfajores = $30", "4 alfajores = $40"] },
+      { id: "mat29_2", type: "true-false", question: "En proporcionalidad, si compro más, el precio sube igual.", answer: "true" },
+      { id: "mat29_3", type: "fill-in-the-blank", question: "Si 1 caramelo vale $5, ¿cuánto valen 2?", answer: "10" }
+    ],
+    lengua: [
+      { id: "len29_1", type: "multiple-choice", question: "¿Para qué sirve el punto (.) al final?", options: ["Aire chiquito", "Terminó una idea", "Separar lista"], answer: "Terminó una idea" },
+      { id: "len29_2", type: "true-false", question: "La coma sirve para separar cosas en una lista.", answer: "true" },
+      { id: "len29_3", type: "fill-in-the-blank", question: "Los puntos y comas son como los _________ del texto.", answer: "semáforos" }
+    ],
+    sociales: [
+      { id: "soc29_1", type: "multiple-choice", question: "¿Qué es el Patrimonio de un país?", options: ["Del Presidente", "Tesoros de todos", "Cosas viejas"], answer: "Tesoros de todos" },
+      { id: "soc29_2", type: "true-false", question: "Un edificio antiguo o una montaña pueden ser patrimonio.", answer: "true" },
+      { id: "soc29_3", type: "fill-in-the-blank", question: "¿Qué baile es patrimonio argentino?", answer: "tango" }
+    ],
+    naturales: [
+      { id: "nat29_1", type: "multiple-choice", question: "INTRUSO: ¿Cuál es energía NO renovable?", options: ["Sol", "Viento", "Petróleo", "Agua"], answer: "Petróleo" },
+      { id: "nat29_2", type: "true-false", question: "El gas es no renovable porque algún día se termina.", answer: "true" },
+      { id: "nat29_3", type: "fill-in-the-blank", question: "¿Qué fuente nos da luz y calor y nunca se agota?", answer: "sol" }
+    ]
+  },
+  nivel30: {
+    exámen3: [
+      { id: "ex30_m1", subject: "matematica", type: "multiple-choice", question: "80 figuritas en 20 sobres, ¿cuántas en cada uno?", options: ["4", "40", "2"], answer: "4" },
+      { id: "ex30_m2", subject: "matematica", type: "true-false", question: "La mitad (1/2) es lo mismo que dos cuartos (2/4).", answer: "true" },
+      { id: "ex30_m3", subject: "matematica", type: "multiple-choice", question: "En 10 + 2 x 5, ¿qué se hace primero?", options: ["10 + 2", "2 x 5", "Da igual"], answer: "2 x 5" },
+      { id: "ex30_m4", subject: "matematica", type: "fill-in-the-blank", question: "Si la entrada cuesta $200, ¿cuánto cuestan 2?", answer: "400" },
+      { id: "ex30_l1", subject: "lengua", type: "multiple-choice", question: "¿Cuál está bien escrita con 'J'?", options: ["Tijera", "Girasol", "Imagen"], answer: "Tijera" },
+      { id: "ex30_l2", subject: "lengua", type: "true-false", question: "Las estrofas son grupos de versos.", answer: "true" },
+      { id: "ex30_l3", subject: "lengua", type: "sort", question: "ORDENÁ la historia:", options: ["inicio", "nudo", "desenlace"], answer: ["inicio", "nudo", "desenlace"] },
+      { id: "ex30_l4", subject: "lengua", type: "fill-in-the-blank", question: "¿Acción como correr o saltar?", answer: "verbo" },
+      { id: "ex30_s1", subject: "sociales", type: "multiple-choice", question: "¿Dónde están los derechos en la Constitución?", options: ["Al final", "Preámbulo y artículos", "En la tapa"], answer: "Preámbulo y artículos" },
+      { id: "ex30_s2", subject: "sociales", type: "true-false", question: "Votar es participar en la democracia.", answer: "true" },
+      { id: "ex30_s3", subject: "sociales", type: "multiple-choice", question: "¿Cómo llegaban los inmigrantes?", options: ["Avión", "Barco", "Tren"], answer: "Barco" },
+      { id: "ex30_s4", subject: "sociales", type: "fill-in-the-blank", question: "¿Derecho a tener nombre y apellido?", answer: "identidad" },
+      { id: "ex30_n1", subject: "naturales", type: "multiple-choice", question: "¿Qué metal atrae el imán?", options: ["Plástico", "Hierro", "Madera"], answer: "Hierro" },
+      { id: "ex30_n2", subject: "naturales", type: "true-false", question: "La sombra es por un objeto opaco.", answer: "true" },
+      { id: "ex30_n3", subject: "naturales", type: "multiple-choice", question: "¿Cuánto tarda la Luna en rodear la Tierra?", options: ["Un día", "Casi un mes", "Un año"], answer: "Casi un mes" },
+      { id: "ex30_n4", subject: "fill-in-the-blank", question: "¿Sonido que rebota y vuelve?", answer: "eco" }
+    ]
+  },
+nivel31: {
+    matematica: [
+      { id: "mat31_1", type: "sort", question: "ORDENÁ los pasos para resolver cuentas combinadas:", options: ["1. multiplicaciones y divisiones", "2. sumas y restas"], answer: ["1. multiplicaciones y divisiones", "2. sumas y restas"] },
+      { id: "mat31_2", type: "true-false", question: "En una cuenta larga, siempre se resuelve primero la suma antes que la multiplicación.", answer: "false" },
+      { id: "mat31_3", type: "fill-in-the-blank", question: "Si tenés 2 x 5 + 3, ¿qué número obtenés?", answer: "13" }
+    ],
+    lengua: [
+      { id: "len31_1", type: "multiple-choice", question: "¿Cómo se llaman las notas que le dicen al actor cómo sentirse?", options: ["Diálogos", "Acotaciones", "Títulos"], answer: "Acotaciones" },
+      { id: "len31_2", type: "true-false", question: "En un guion de teatro, el nombre del personaje suele escribirse en mayúsculas.", answer: "true" },
+      { id: "len31_3", type: "fill-in-the-blank", question: "El texto escrito para ser actuado se llama _________.", answer: "guion" }
+    ],
+    sociales: [
+      { id: "soc31_1", type: "multiple-choice", question: "¿En qué parte de Argentina hace mucho frío y nieva?", options: ["En el Norte", "En el Centro", "En el Sur"], answer: "En el Sur" },
+      { id: "soc31_2", type: "true-false", question: "En el Norte de Argentina, el clima suele ser cálido y húmedo.", answer: "true" },
+      { id: "soc31_3", type: "fill-in-the-blank", question: "¿Qué clima tenemos en Buenos Aires (ni mucho frío ni calor)?", answer: "templado" }
+    ],
+    naturales: [
+      { id: "nat31_1", type: "multiple-choice", question: "MOVIMIENTO DE ROTACIÓN: 1. Gira sobre sí misma, 2. Pasan 24hs, 3. ¿Qué se crea?", options: ["El día y la noche", "Las estaciones", "El año nuevo"], answer: "El día y la noche" },
+      { id: "nat31_2", type: "true-false", question: "El movimiento de Traslación es el que dura un año entero.", answer: "true" },
+      { id: "nat31_3", type: "fill-in-the-blank", question: "¿Cómo se llama cuando la Tierra gira como un trompo?", answer: "rotación" }
+    ]
+  },
+  nivel32: {
+    matematica: [
+      { id: "mat32_1", type: "multiple-choice", question: "¿Cuál es la 'regla de oro' para sumar decimales?", options: ["Números al revés", "Coma debajo de la coma", "No usar la coma"], answer: "Coma debajo de la coma" },
+      { id: "mat32_2", type: "true-false", question: "Alinear las comas sirve para sumar pesos con pesos y centavos con centavos.", answer: "true" },
+      { id: "mat32_3", type: "fill-in-the-blank", question: "Si sumás $1,50 + $1,50, ¿cuántos pesos tenés?", answer: "3" }
+    ],
+    lengua: [
+      { id: "len32_1", type: "multiple-choice", question: "PASOS DEL INFORME: 1.Idea, 2.Materiales, 3.Proceso, 4.¿Qué...?", options: ["aprendimos", "comimos", "jugamos"], answer: "aprendimos" },
+      { id: "len32_2", type: "true-false", question: "El informe de experimento sirve para compartir descubrimientos.", answer: "true" },
+      { id: "len32_3", type: "fill-in-the-blank", question: "La lista de cosas que usamos se llama _________.", answer: "materiales" }
+    ],
+    sociales: [
+      { id: "soc32_1", type: "multiple-choice", question: "¿Cómo es el relieve en la Llanura Pampeana?", options: ["Montañas altísimas", "Suelo plano y verde", "Mucha arena"], answer: "Suelo plano y verde" },
+      { id: "soc32_2", type: "true-false", question: "La Cordillera de los Andes tiene montañas con nieve.", answer: "true" },
+      { id: "soc32_3", type: "fill-in-the-blank", question: "¿Cómo se llama la forma que tiene el suelo?", answer: "relieve" }
+    ],
+    naturales: [
+      { id: "nat32_1", type: "multiple-choice", question: "¿Por qué brilla la Luna si no tiene luz propia?", options: ["Tiene lámparas", "Refleja el Sol", "Es de queso"], answer: "Refleja el Sol" },
+      { id: "nat32_2", type: "true-false", question: "Cuando vemos toda la cara iluminada, es Luna Llena.", answer: "true" },
+      { id: "nat32_3", type: "fill-in-the-blank", question: "¿Fase cuando vemos solo un pedacito de Luna?", answer: "cuarto creciente" }
+    ]
+  },
+  nivel33: {
+    matematica: [
+      { id: "mat33_1", type: "multiple-choice", question: "Si comiste una manzana entera y media de otra, ¿qué número usás?", options: ["2 y 1/2", "1 y 1/2", "3 manzanas"], answer: "1 y 1/2" },
+      { id: "mat33_2", type: "true-false", question: "Un número mixto mezcla un entero grande con una fracción.", answer: "true" },
+      { id: "mat33_3", type: "fill-in-the-blank", question: "¿En qué lugar de la casa se ven números mixtos (recetas)?", answer: "cocina" }
+    ],
+    lengua: [
+      { id: "len33_1", type: "multiple-choice", question: "INTRUSO: ¿Cuál de estas palabras está MAL escrita?", options: ["Habría", "Hacer", "Abía", "Hola"], answer: "Abía" },
+      { id: "len33_2", type: "true-false", question: "La letra H es muda, pero importante para no confundir palabras.", answer: "true" },
+      { id: "len33_3", type: "fill-in-the-blank", question: "¿Qué palabra de 'abrir' no lleva H?", answer: "abría" }
+    ],
+    sociales: [
+      { id: "soc33_1", type: "multiple-choice", question: "¿Qué animales están protegidos en los Parques Nacionales?", options: ["Yaguareté y Cóndor", "Dinosaurios", "Elefantes"], answer: "Yaguareté y Cóndor" },
+      { id: "soc33_2", type: "true-false", question: "En los Parques Nacionales está permitido talar todos los árboles.", answer: "false" },
+      { id: "soc33_3", type: "fill-in-the-blank", question: "Los Parques Nacionales son 'islas de _________'.", answer: "naturaleza" }
+    ],
+    naturales: [
+      { id: "nat33_1", type: "multiple-choice", question: "¿Qué planetas son gigantes hechos de gas y nubes?", options: ["Tierra y Marte", "Júpiter y Saturno", "Mercurio"], answer: "Júpiter y Saturno" },
+      { id: "nat33_2", type: "true-false", question: "El Sol es el 'jefe' de nuestro Sistema Solar.", answer: "true" },
+      { id: "nat33_3", type: "fill-in-the-blank", question: "¿Cuál es el planeta con los anillos más lindos?", answer: "saturno" }
+    ]
+  },
+  nivel34: {
+    matematica: [
+      { id: "mat34_1", type: "multiple-choice", question: "Si una pared mide 3m de largo y 2m de ancho, ¿cuánto es el área?", options: ["5 metros", "6 metros cuadrados", "1 metro"], answer: "6 metros cuadrados" },
+      { id: "mat34_2", type: "true-false", question: "Para calcular el área se multiplica el largo por el ancho.", answer: "true" },
+      { id: "mat34_3", type: "fill-in-the-blank", question: "¿Cómo se llama el espacio ADENTRO de una figura?", answer: "área" }
+    ],
+    lengua: [
+      { id: "len34_1", type: "multiple-choice", question: "¿Qué pasa si un texto salta de un tema a otro sin avisar?", options: ["Es divertido", "Pierde coherencia", "Es un poema"], answer: "Pierde coherencia" },
+      { id: "len34_2", type: "true-false", question: "La coherencia es como un camino de baldosas bien unidas.", answer: "true" },
+      { id: "len34_3", type: "fill-in-the-blank", question: "Si el tema se mantiene de principio a fin, tiene _________.", answer: "coherencia" }
+    ],
+    sociales: [
+      { id: "soc34_1", type: "multiple-choice", question: "¿Qué acción ayuda a cuidar el medio ambiente?", options: ["Canilla abierta", "Basura al río", "Cerrar el agua al cepillar"], answer: "Cerrar el agua al cepillar" },
+      { id: "soc34_2", type: "true-false", question: "La contaminación daña el aire, el agua y el suelo.", answer: "true" },
+      { id: "soc34_3", type: "fill-in-the-blank", question: "¿Cómo se llama el problema de ensuciar el planeta?", answer: "contaminación" }
+    ],
+    naturales: [
+      { id: "nat34_1", type: "multiple-choice", question: "¿Qué máquina simple usarías para subir una bici a un escalón?", options: ["Polea", "Palanca", "Rampa"], answer: "Rampa" },
+      { id: "nat34_2", type: "true-false", question: "La polea hace que tirar hacia abajo sea más fácil.", answer: "true" },
+      { id: "nat34_3", type: "fill-in-the-blank", question: "¿Máquina que funciona como un subibaja?", answer: "palanca" }
+    ]
+  },
+  nivel35: {
+    matematica: [
+      { id: "mat35_1", type: "multiple-choice", question: "En división por dos cifras, ¿qué es lo más importante?", options: ["Puntería y orden", "Cerrar los ojos", "Sumar todo"], answer: "Puntería y orden" },
+      { id: "mat35_2", type: "true-false", question: "En nivel experto, las divisiones pueden ser más largas.", answer: "true" },
+      { id: "mat35_3", type: "fill-in-the-blank", question: "Si te pasás en el cálculo, ¿probás con un número más...?", answer: "chico" }
+    ],
+    lengua: [
+      { id: "len35_1", type: "multiple-choice", question: "¿Qué es lo más importante en un debate?", options: ["Gritar", "Escuchar con respeto", "Tener siempre la razón"], answer: "Escuchar con respeto" },
+      { id: "len35_2", type: "true-false", question: "En un debate se usan razones para explicar la opinión.", answer: "true" },
+      { id: "len35_3", type: "fill-in-the-blank", question: "¿Cómo se llama hablar de un tema dando opiniones?", answer: "debate" }
+    ],
+    sociales: [
+      { id: "soc35_1", type: "multiple-choice", question: "INTRUSO: ¿Cuál NO es un símbolo patrio?", options: ["Bandera", "Escudo", "Dibujo de superhéroe", "Himno"], answer: "Dibujo de superhéroe" },
+      { id: "soc35_2", type: "true-false", question: "La escarapela nos representa y nos une.", answer: "true" },
+      { id: "soc35_3", type: "fill-in-the-blank", question: "Nuestra canción de libertad es el _________.", answer: "himno nacional" }
+    ],
+    naturales: [
+      { id: "nat35_1", type: "multiple-choice", question: "¿Con qué medimos la temperatura?", options: ["Regla", "Reloj", "Termómetro"], answer: "Termómetro" },
+      { id: "nat35_2", type: "true-false", question: "El calor es energía que pasa de lo caliente a lo frío.", answer: "true" },
+      { id: "nat35_3", type: "fill-in-the-blank", question: "¿Energía que sentimos al tocar algo caliente?", answer: "calor" }
+    ]
+  },
+  nivel36: {
+    matematica: [
+      { id: "mat36_1", type: "multiple-choice", question: "¿Qué usamos para resolver acertijos?", options: ["Solo sumas", "Lógica y atención", "La suerte"], answer: "Lógica y atención" },
+      { id: "mat36_2", type: "true-false", question: "Los acertijos son gimnasia para el cerebro.", answer: "true" },
+      { id: "mat36_3", type: "fill-in-the-blank", question: "Si encontrás la respuesta escondida, sos un...", answer: "detective" }
+    ],
+    lengua: [
+      { id: "len36_1", type: "multiple-choice", question: "¿Cómo se llama el mensaje para vender un juguete?", options: ["Propaganda", "Publicidad", "Cuento"], answer: "Publicidad" },
+      { id: "len36_2", type: "true-false", question: "La propaganda sirve para enseñar hábitos buenos.", answer: "true" },
+      { id: "len36_3", type: "fill-in-the-blank", question: "Las publicidades buscan llamar nuestra _________.", answer: "atención" }
+    ],
+    sociales: [
+      { id: "soc36_1", type: "multiple-choice", question: "¿Para qué se reparten tareas en el gobierno?", options: ["Evitar poder total", "Trabajar menos", "Hacer lío"], answer: "Evitar poder total" },
+      { id: "soc36_2", type: "true-false", question: "En democracia, unos hacen leyes y otros las ejecutan.", answer: "true" },
+      { id: "soc36_3", type: "fill-in-the-blank", question: "¿Sistema donde elegimos y hay justicia?", answer: "democracia" }
+    ],
+    naturales: [
+      { id: "nat36_1", type: "multiple-choice", question: "¿Capa de aire invisible que protege la Tierra?", options: ["Oxígeno", "Atmósfera", "Manta"], answer: "Atmósfera" },
+      { id: "nat36_2", type: "true-false", question: "Sin la atmósfera no habría vida.", answer: "true" },
+      { id: "nat36_3", type: "fill-in-the-blank", question: "¿Qué gas respiramos gracias a la atmósfera?", answer: "oxígeno" }
+    ]
+  },
+  nivel37: {
+    matematica: [
+      { id: "mat37_1", type: "multiple-choice", question: "¿Qué figura ocupa un lugar en el espacio?", options: ["Un dibujo", "Un cuerpo geométrico", "Una línea"], answer: "Un cuerpo geométrico" },
+      { id: "mat37_2", type: "true-false", question: "Los vértices son las puntas de las aristas.", answer: "true" },
+      { id: "mat37_3", type: "fill-in-the-blank", question: "¿Sos experta en geometría? (Escribí SI)", answer: "si" }
+    ],
+    lengua: [
+      { id: "len37_1", type: "multiple-choice", question: "¿Qué aprendemos analizando cuentos de autor?", options: ["Escriben igual", "Cada uno tiene su estilo", "Leer rápido"], answer: "Cada uno tiene su estilo" },
+      { id: "len37_2", type: "true-false", question: "Los autores eligen palabras especiales para sus personajes.", answer: "true" },
+      { id: "len37_3", type: "fill-in-the-blank", question: "¿Cómo se llama la forma especial de escribir?", answer: "estilo" }
+    ],
+    sociales: [
+      { id: "soc37_1", type: "multiple-choice", question: "¿De qué color son las llanuras en el mapa físico?", options: ["Marrón", "Verde", "Azul"], answer: "Verde" },
+      { id: "soc37_2", type: "true-false", question: "Los mapas políticos muestran límites de provincias.", answer: "true" },
+      { id: "soc37_3", type: "fill-in-the-blank", question: "¿Qué color representa las montañas altas?", answer: "marrón" }
+    ],
+    naturales: [
+      { id: "nat37_1", type: "multiple-choice", question: "CADENA: 1. Sol, 2. Plantas, 3. ¿Quién sigue?", options: ["Herbívoro", "Carnívoro", "Piedra"], answer: "Herbívoro" },
+      { id: "nat37_2", type: "true-false", question: "En la naturaleza todos son importantes.", answer: "true" },
+      { id: "nat37_3", type: "fill-in-the-blank", question: "¿De dónde sacan las plantas su energía?", answer: "sol" }
+    ]
+  },
+  nivel38: {
+    matematica: [
+      { id: "mat38_1", type: "multiple-choice", question: "¿Cuántos ceros tiene el 1.000.000?", options: ["5", "6", "4"], answer: "6" },
+      { id: "mat38_2", type: "true-false", question: "El millón es la prueba final de números grandes.", answer: "true" },
+      { id: "mat38_3", type: "fill-in-the-blank", question: "Si a 999.999 le sumás 1, ¿qué número es?", answer: "1.000.000" }
+    ],
+    lengua: [
+      { id: "len38_1", type: "multiple-choice", question: "¿Para qué sirve la ortografía?", options: ["Tener errores", "Textos claros", "Para nada"], answer: "Textos claros" },
+      { id: "len38_2", type: "true-false", question: "Ahora podés escribir cualquier libro.", answer: "true" },
+      { id: "len38_3", type: "fill-in-the-blank", question: "¿Cómo debe ser tu escritura ahora?", answer: "perfecta" }
+    ],
+    sociales: [
+      { id: "soc38_1", type: "multiple-choice", question: "¿Para qué sirven los jueces?", options: ["Trato igualitario", "Pelear", "Gane el fuerte"], answer: "Trato igualitario" },
+      { id: "soc38_2", type: "true-false", question: "La justicia resuelve problemas de reglas.", answer: "true" },
+      { id: "soc38_3", type: "fill-in-the-blank", question: "¿Valor al respetar las leyes?", answer: "paz" }
+    ],
+    naturales: [
+      { id: "nat38_1", type: "multiple-choice", question: "¿Cómo se llaman los paisajes (selva, desierto)?", options: ["Barrios", "Biomas", "Países"], answer: "Biomas" },
+      { id: "nat38_2", type: "true-false", question: "Cada bioma tiene su clima y animales.", answer: "true" },
+      { id: "nat38_3", type: "fill-in-the-blank", question: "¿Bioma con mucha selva en Argentina?", answer: "misiones" }
+    ]
+  },
+  nivel39: {
+    matematica: [
+      { id: "mat39_1", type: "multiple-choice", question: "¿Qué debés usar para ganar este último desafío?", options: ["Suerte", "Lógica y esfuerzo", "Pedir ayuda"], answer: "Lógica y esfuerzo" },
+      { id: "mat39_2", type: "true-false", question: "¡Vos podés lograr cualquier desafío matemático!", answer: "true" },
+      { id: "mat39_3", type: "fill-in-the-blank", question: "¿Lista para el Examen Final?", answer: "si" }
+    ],
+    lengua: [
+      { id: "len39_1", type: "multiple-choice", question: "Como autora, ¿qué podés escribir ahora?", options: ["Lista súper", "Cuentos y poesías", "Nada"], answer: "Cuentos y poesías" },
+      { id: "len39_2", type: "true-false", question: "Escribir lo que imaginás es usar tu propia voz.", answer: "true" },
+      { id: "len39_3", type: "fill-in-the-blank", question: "¿Persona que escribe historias?", answer: "autora" }
+    ],
+    sociales: [
+      { id: "soc39_1", type: "multiple-choice", question: "¿Qué es ser buen ciudadano?", options: ["Ayudar y ser honesto", "Ser egoísta", "No participar"], answer: "Ayudar y ser honesto" },
+      { id: "soc39_2", type: "true-false", question: "Participar mejora la comunidad.", answer: "true" },
+      { id: "soc39_3", type: "fill-in-the-blank", question: "¿Valor al decir la verdad?", answer: "honestidad" }
+    ],
+    naturales: [
+      { id: "nat39_1", type: "sort", question: "ORDENÁ las 3R:", options: ["1. reducir", "2. reutilizar", "3. reciclar"], answer: ["1. reducir", "2. reutilizar", "3. reciclar"] },
+      { id: "nat39_2", type: "true-false", question: "El futuro del planeta está en tus manos.", answer: "true" },
+      { id: "nat39_3", type: "fill-in-the-blank", question: "¿Cómo llamamos a los que cuidan la Tierra?", answer: "guardianes" }
+    ]
+  },
+  nivel40: {
+    examen_final: [
+      { id: "ex40_m1", subject: "matematica", type: "multiple-choice", question: "Área de mesa de 2m x 1m:", options: ["3m", "2 metros cuadrados", "1m"], answer: "2 metros cuadrados" },
+      { id: "ex40_m2", subject: "matematica", type: "true-false", question: "El 1.000.000 tiene seis ceros.", answer: "true" },
+      { id: "ex40_m3", subject: "matematica", type: "multiple-choice", question: "$1,50 + $2,50 es:", options: ["$3,00", "$4,00", "$4,50"], answer: "$4,00" },
+      { id: "ex40_m4", subject: "matematica", type: "fill-in-the-blank", question: "¿Número mixto de pizza y cuarto?", answer: "1 y 1/4" },
+      { id: "ex40_m5", subject: "matematica", type: "true-false", question: "Un cubo tiene todas sus caras iguales.", answer: "true" },
+      { id: "ex40_l1", subject: "lengua", type: "multiple-choice", question: "¿Función de las acotaciones?", options: ["Público lea", "Guiar al actor", "Precio entrada"], answer: "Guiar al actor" },
+      { id: "ex40_l2", subject: "lengua", type: "true-false", question: "'Hielo' lleva H por el diptongo 'ie'.", answer: "true" },
+      { id: "ex40_l3", subject: "lengua", type: "multiple-choice", question: "La propaganda busca:", options: ["Vender", "Hábitos buenos", "Ver películas"], answer: "Hábitos buenos" },
+      { id: "ex40_l4", subject: "lengua", type: "fill-in-the-blank", question: "¿Parte donde contamos qué pasó en un informe?", answer: "desarrollo" },
+      { id: "ex40_l5", subject: "lengua", type: "multiple-choice", question: "Un texto sin coherencia:", options: ["Es largo", "Mezcla temas", "Tiene dibujos"], answer: "Mezcla temas" },
+      { id: "ex40_s1", subject: "sociales", type: "multiple-choice", question: "¿Mapa para ver montañas y ríos?", options: ["Político", "Físico", "Rutas"], answer: "Físico" },
+      { id: "ex40_s2", subject: "sociales", type: "true-false", question: "El Escudo es un símbolo patrio.", answer: "true" },
+      { id: "ex40_s3", subject: "sociales", type: "multiple-choice", question: "¿Provincia con Cataratas?", options: ["Mendoza", "Misiones", "La Pampa"], answer: "Misiones" },
+      { id: "ex40_s4", subject: "sociales", type: "fill-in-the-blank", question: "¿Cordillera más importante?", answer: "andes" },
+      { id: "ex40_s5", subject: "sociales", type: "true-false", question: "Respetar leyes permite vivir en justicia.", answer: "true" },
+      { id: "ex40_n1", subject: "naturales", type: "multiple-choice", question: "¿Qué causa el día y la noche?", options: ["Rotación", "Traslación", "Órbita"], answer: "Rotación" },
+      { id: "ex40_n2", subject: "naturales", type: "true-false", question: "La temperatura se mide con termómetro.", answer: "true" },
+      { id: "ex40_n3", subject: "naturales", type: "sort", question: "ORDENÁ la cadena:", options: ["planta (productor)", "grillo (herbívoro)", "sapo (carnívoro)"], answer: ["planta (productor)", "grillo (herbívoro)", "sapo (carnívoro)"] },
+      { id: "ex40_n4", subject: "naturales", type: "multiple-choice", question: "¿Máquina de rueda y soga?", options: ["Palanca", "Polea", "Rampa"], answer: "Polea" },
+      { id: "ex40_n5", subject: "naturales", type: "fill-in-the-blank", question: "¿Planeta rojo?", answer: "marte" }
+    ]
+  }
+
+    /* --- LÓGICA DE NAVEGACIÓN Y JUEGO --- */
+    function navTo(screenId) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById('screen-' + screenId).classList.add('active');
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      if(screenId === 'home') document.querySelector('.nav-btn:nth-child(1)').classList.add('active');
+      if(screenId === 'profile') {
+        document.querySelector('.nav-btn:nth-child(2)').classList.add('active');
+        document.getElementById('stat-coins').textContent = state.coins;
+      }
+    }
+
+    function renderLevels() {
+      const grid = document.getElementById('levels-grid');
+      grid.innerHTML = '';
+      for (let i = 1; i <= 40; i++) {
+        const isLocked = i > 1 && !state.completedLevels.includes(i - 1);
+        const card = document.createElement('div');
+        card.className = `level-card ${isLocked ? 'locked' : ''} ${state.completedLevels.includes(i) ? 'completed' : ''}`;
+        card.innerHTML = `
+          <div style="font-size:2rem; margin-bottom:10px;">${isLocked ? '🔒' : '🚀'}</div>
+          <div style="font-family:'Fredoka One';">NIVEL ${i}</div>
+        `;
+        if (!isLocked) card.onclick = () => selectLevel(i);
+        grid.appendChild(card);
+      }
+    }
+
+    function selectLevel(num) {
+      state.currentLevel = num;
+      currentIntroIndex = 0;
+      renderIntroStep();
+      navTo('intro');
+    }
+
+    function renderIntroStep() {
+      const levelNum = state.currentLevel;
+      const subjectKey = subjectsOrder[currentIntroIndex];
+      const m = subjectMeta[subjectKey];
+      const info = (NAP_CONTENT[levelNum] && NAP_CONTENT[levelNum][subjectKey]) || { txt: "¡A repasar!" };
+
+      document.getElementById('intro-badge').textContent = `Misión ${levelNum} • Paso ${currentIntroIndex + 1} de 4`;
+      document.getElementById('intro-title').textContent = `Repasamos ${m.label}`;
+
+      const list = document.getElementById('intro-subjects');
+      list.innerHTML = `
+        <div style="text-align: center; padding: 20px 10px; animation: fadeIn 0.4s ease;">
+          <div style="font-size: 4rem; margin-bottom: 15px;">${m.icon}</div>
+          <h2 class="${m.colorClass}" style="font-family: 'Fredoka One'; margin-bottom: 15px;">${m.label}</h2>
+          <p style="font-size: 1.1rem; line-height: 1.6; color: var(--white); background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1);">
+            ${info.txt}
+          </p>
+        </div>
+      `;
+
+      const startBtn = document.getElementById('btn-start-level');
+      if (currentIntroIndex < subjectsOrder.length - 1) {
+        startBtn.innerHTML = "Siguiente Materia ➔";
+        startBtn.onclick = () => { currentIntroIndex++; renderIntroStep(); };
+      } else {
+        startBtn.innerHTML = "¡Listo, a Jugar! 🎮";
+        startBtn.onclick = () => { startLevel(); };
+      }
+    }
+
+    function startLevel() {
+    const levelKey = 'nivel' + state.currentLevel;
+    const data = curriculumData[levelKey];
+    questionQueue = [];
+
+    // Lógica especial para Niveles de Examen (como el 40)
+    if (data.examen_final) {
+        questionQueue = [...data.examen_final.map(q => ({...q, subject: 'examen_final'}))];
+    } else {
+        // Carga normal por materias
+        subjectsOrder.forEach(sub => {
+            if(data[sub]) {
+                questionQueue.push(...data[sub].map(q => ({...q, subject: sub})));
+            }
+        });
+    }
+
+    if (questionQueue.length === 0) {
+        console.error("Error: No se encontraron preguntas para el nivel " + state.currentLevel);
+        return;
+    }
+
+    currentQIndex = 0;
+    navTo('game');
+    renderQuestion();
+}
+
+  /* --- FUNCIONES DE JUEGO --- */
+
+function renderQuestion() {
+    document.querySelectorAll('button').forEach(b => b.disabled = false);
+    const q = questionQueue[currentQIndex];
+    
+    // Actualizar Progreso
+    document.getElementById('progress-label').textContent = `Pregunta ${currentQIndex + 1} de ${questionQueue.length}`;
+    const pct = Math.round((currentQIndex / questionQueue.length) * 100);
+    document.getElementById('progress-pct').textContent = pct + '%';
+    document.getElementById('progress-fill').style.width = pct + '%';
+
+    // Actualizar la "píldora" de materia
+    const pill = document.getElementById('subject-pill');
+    // Verificamos si es un nivel de examen o si la pregunta viene del array examen_final
+    if ([10, 20, 30, 40].includes(state.currentLevel) || q.subject === 'examen_final') {
+        pill.textContent = `🏆 EXAMEN FINAL`;
+        pill.className = `subject-pill bg-rot`; 
+    } else {
+        const m = subjectMeta[q.subject];
+        pill.textContent = `${m.icon} ${m.label}`;
+        pill.className = `subject-pill ${m.bgClass} ${m.colorClass}`;
+    }
+
+    document.getElementById('q-text').textContent = q.question || q.q;
+    
+    // Reset de zonas
+    ['zone-mc', 'zone-tf', 'zone-fitb', 'zone-sort'].forEach(z => document.getElementById(z).style.display = 'none');
+    document.getElementById('feedback-panel').style.display = 'none';
+    document.getElementById('next-btn').style.display = 'none';
+
+    // --- LÓGICA DE VISUALIZACIÓN POR TIPO ---
+    if(q.type === 'multiple-choice' || q.type === 'intruder' || q.type === 'sequence') {
+        const zone = document.getElementById('zone-mc');
+        zone.style.display = 'flex';
+        zone.innerHTML = '';
+        q.options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.textContent = opt;
+            btn.onclick = () => checkAnswer(opt);
+            zone.appendChild(btn);
+        });
+
+    } else if(q.type === 'true-false') {
+        document.getElementById('zone-tf').style.display = 'grid';
+
+    } else if(q.type === 'fill-in-the-blank' || q.type === 'fast') {
+        document.getElementById('zone-fitb').style.display = 'block';
+        const input = document.getElementById('fitb-input');
+        input.value = '';
+        setTimeout(() => input.focus(), 100); 
+
+    } else if(q.type === 'sort') {
+        document.getElementById('zone-sort').style.display = 'block';
+        const list = document.getElementById('sort-list');
+        list.innerHTML = '';
+        // Mezclamos las opciones para que el usuario tenga que ordenarlas
+        [...q.options].sort(() => Math.random() - 0.5).forEach(opt => {
+            const item = document.createElement('div');
+            item.className = 'sort-item';
+            item.textContent = opt;
+            list.appendChild(item);
+        });
+        new Sortable(list, { 
+            animation: 150,
+            ghostClass: 'sortable-ghost'
+        });
+    }
+}
+
+function checkAnswer(val) {
+    const q = questionQueue[currentQIndex];
+    let isCorrect = false;
+
+    if (Array.isArray(q.answer)) {
+        const valNormalizado = val.map(v => String(v).toLowerCase().trim());
+        const ansNormalizado = q.answer.map(v => String(v).toLowerCase().trim());
+        isCorrect = JSON.stringify(valNormalizado) === JSON.stringify(ansNormalizado);
+    } else {
+        isCorrect = String(val).toLowerCase().trim() === String(q.answer).toLowerCase().trim();
+    }
+
+    const fb = document.getElementById('feedback-panel');
+    fb.style.display = 'block';
+
+    if (isCorrect) {
+        fb.style.background = 'rgba(76,217,123,0.2)';
+        fb.style.color = 'var(--nat)';
+        fb.textContent = '¡Excelente! 🌟 +10 monedas';
+        state.coins += 10;
+        document.getElementById('coins-display').textContent = state.coins;
+        document.getElementById('stat-coins').textContent = state.coins;
+        saveProgress(); 
+    } else {
+        fb.style.background = 'rgba(255,107,53,0.2)';
+        fb.style.color = 'var(--mat)';
+        const respuestaVisible = Array.isArray(q.answer) ? q.answer.join(', ') : q.answer;
+        fb.textContent = '¡Casi! La respuesta era: ' + respuestaVisible;
+    }
+
+    document.getElementById('next-btn').style.display = 'block';
+    // AQUÍ ACTUALIZAMOS LOS IDs DE LOS BOTONES A DESACTIVAR
+    document.querySelectorAll('.option-btn, #btn-true, #btn-false, #btn-fitb, #btn-sort').forEach(b => b.disabled = true);
+}
+
+function answerTF(val) { checkAnswer(val); }
+
+function submitFITB() { 
+    const input = document.getElementById('fitb-input');
+    const val = input.value.trim();
+    if(val !== "") {
+        checkAnswer(val); 
+    }
+}
+
+function submitSort() {
+    const items = Array.from(document.querySelectorAll('.sort-item')).map(i => i.textContent.trim());
+    const q = questionQueue[currentQIndex];
+    
+    // Comparamos el orden del usuario contra el array de respuesta correcta
+    // Usamos JSON.stringify para comparar el contenido de los dos arrays fácilmente
+    if (JSON.stringify(items) === JSON.stringify(q.answer)) {
+        checkAnswer(q.answer); // Correcto
+    } else {
+        checkAnswer("INCORRECTO_SORT_TRIGGER"); // Esto disparará el feedback de error
+    }
+}
+
+function nextQuestion() {
+    currentQIndex++;
+    if(currentQIndex < questionQueue.length) {
+        renderQuestion();
+    } else {
+        finishLevel();
+    }
+}
+       function finishLevel() {
+      if(!state.completedLevels.includes(state.currentLevel)) {
+        state.completedLevels.push(state.currentLevel);
+        saveProgress(); // GUARDA EL NIVEL COMPLETADO
+      }
+      navTo('results');
+      document.getElementById('result-title').textContent = '¡NIVEL ' + state.currentLevel + ' COMPLETADO!';
+      document.getElementById('result-score').textContent = '🪙 ' + state.coins;
+      document.getElementById('result-sub').textContent = '¡Sos una verdadera experta, Aitana!';
+      renderLevels();
+    }
+
+    function goHome() { navTo('home'); }
+	window.onload = () => {
+      renderLevels();
+      navTo('home');
+    };
+</script>
+    /
