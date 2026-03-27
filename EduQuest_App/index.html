@@ -1502,7 +1502,7 @@ nivel31: {
       const levelNum = state.currentLevel;
       const subjectKey = subjectsOrder[currentIntroIndex];
       const m = subjectMeta[subjectKey];
-      const info = (NAP_CONTENT[levelNum] && NAP_CONTENT[levelNum][subjectKey]) || { txt: "¡A repasar!" };
+      const info = (napContent[levelNum] && napContent[levelNum][subjectKey]) || { txt: "¡A repasar!" };
 
       document.getElementById('intro-badge').textContent = `Misión ${levelNum} • Paso ${currentIntroIndex + 1} de 4`;
       document.getElementById('intro-title').textContent = `Repasamos ${m.label}`;
