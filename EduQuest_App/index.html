@@ -1556,10 +1556,9 @@ nivel31: {
 }
 
   /* --- FUNCIONES DE JUEGO --- */
-
 function renderQuestion() {
     document.querySelectorAll('button').forEach(b => b.disabled = false);
-    const q = questionQueue[currentQIndex];
+    const q = questionQueue[currentQIndex]; // Usamos 'q' para ser consistentes
     
     // Actualizar Progreso
     document.getElementById('progress-label').textContent = `Pregunta ${currentQIndex + 1} de ${questionQueue.length}`;
@@ -1569,7 +1568,6 @@ function renderQuestion() {
 
     // Actualizar la "píldora" de materia
     const pill = document.getElementById('subject-pill');
-    // Verificamos si es un nivel de examen o si la pregunta viene del array examen_final
     if ([10, 20, 30, 40].includes(state.currentLevel) || q.subject === 'examen_final') {
         pill.textContent = `🏆 EXAMEN FINAL`;
         pill.className = `subject-pill bg-rot`; 
@@ -1582,7 +1580,10 @@ function renderQuestion() {
     document.getElementById('q-text').textContent = q.question || q.q;
     
     // Reset de zonas
-    ['zone-mc', 'zone-tf', 'zone-fitb', 'zone-sort'].forEach(z => document.getElementById(z).style.display = 'none');
+    ['zone-mc', 'zone-tf', 'zone-fitb', 'zone-sort'].forEach(z => {
+        const el = document.getElementById(z);
+        if(el) el.style.display = 'none';
+    });
     document.getElementById('feedback-panel').style.display = 'none';
     document.getElementById('next-btn').style.display = 'none';
 
@@ -1608,44 +1609,39 @@ function renderQuestion() {
         input.value = '';
         setTimeout(() => input.focus(), 100); 
 
-    } else if (currentQuestion.type === 'sort') {
-    zoneSort.style.display = 'block';
-    const sortList = document.getElementById('sort-list');
-    sortList.innerHTML = '';
+    } else if (q.type === 'sort') { // Corregido: usamos 'q'
+        const zoneSort = document.getElementById('zone-sort');
+        zoneSort.style.display = 'block';
+        const sortList = document.getElementById('sort-list');
+        sortList.innerHTML = '';
 
-    // Mezclamos las opciones para que no aparezcan ya ordenadas
-    const shuffled = [...currentQuestion.options].sort(() => Math.random() - 0.5);
+        // Mezclamos las opciones
+        const shuffled = [...q.options].sort(() => Math.random() - 0.5);
 
-    shuffled.forEach(text => {
-        const item = document.createElement('div');
-        item.className = 'sort-item';
-        item.draggable = true; // <--- Esto permite el arrastre
-        item.innerText = text;
+        shuffled.forEach(text => {
+            const item = document.createElement('div');
+            item.className = 'sort-item';
+            item.draggable = true; 
+            item.innerText = text;
 
-        // --- EVENTOS DE MOUSE ---
-        item.addEventListener('dragstart', e => {
-            item.classList.add('dragging');
+            item.addEventListener('dragstart', () => item.classList.add('dragging'));
+            item.addEventListener('dragend', () => item.classList.remove('dragging'));
+
+            sortList.appendChild(item);
         });
 
-        item.addEventListener('dragend', e => {
-            item.classList.remove('dragging');
+        sortList.addEventListener('dragover', e => {
+            e.preventDefault();
+            const dragging = document.querySelector('.dragging');
+            const afterElement = getDragAfterElement(sortList, e.clientY);
+            if (afterElement == null) {
+                sortList.appendChild(dragging);
+            } else {
+                sortList.insertBefore(dragging, afterElement);
+            }
         });
-
-        sortList.appendChild(item);
-    });
-
-    // Lógica para calcular la nueva posición al arrastrar
-    sortList.addEventListener('dragover', e => {
-        e.preventDefault();
-        const afterElement = getDragAfterElement(sortList, e.clientY);
-        const dragging = document.querySelector('.dragging');
-        if (afterElement == null) {
-            sortList.appendChild(dragging);
-        } else {
-            sortList.insertBefore(dragging, afterElement);
-        }
-    });
-}
+    } // <-- AQUÍ FALTABA ESTA LLAVE
+} // <-- Y AQUÍ FALTABA LA OTRA QUE CIERRA LA FUNCIÓN PRINCIPAL
 function getDragAfterElement(container, y) {
     const draggableElements = [...container.querySelectorAll('.sort-item:not(.dragging)')];
 
@@ -1725,7 +1721,7 @@ function nextQuestion() {
         finishLevel();
     }
 }
-       function finishLevel() {
+      function finishLevel() {
       if(!state.completedLevels.includes(state.currentLevel)) {
         state.completedLevels.push(state.currentLevel);
         saveProgress(); // GUARDA EL NIVEL COMPLETADO
@@ -1743,4 +1739,5 @@ function nextQuestion() {
       navTo('home');
     };
 </script>
-    /
+</body>
+</html>
