@@ -85,7 +85,8 @@
     
     .sort-item { background: var(--card2); border: 2px solid var(--rot); border-radius: 12px; padding: 14px; margin-bottom: 8px; font-family: 'Fredoka One'; cursor: grab; }
 
-	.sort-item.dragging { opacity: 0.5; background: var(--pri); border: 2px dashed white; }  
+	.sort-item.dragging { opacity: 1 !important; background: var(--rot) !important; border: 2px solid white !important;
+  transform: scale(1.05);box-shadow: 0 10px 20px rgba(0,0,0,0.4); } 
 	  
     .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: rgba(15,10,42,0.95); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid var(--card2); }
     .nav-btn { background: none; border: none; color: var(--muted); font-size: 0.8rem; cursor: pointer; display: flex; flex-direction: column; align-items: center; }
@@ -155,27 +156,22 @@
       <button onclick="goHome()" style="width:100%; padding:15px; border-radius:10px; border:none; background:var(--rot); color:white; font-weight:800;">VOLVER AL INICIO</button>
     </div>
 
-    <div class="screen" id="screen-profile" style="text-align:center; padding-top:40px;">
-      <div style="background:var(--card); padding:30px; border-radius:25px;">
-        <div style="font-size:4rem; margin-bottom:10px;">🧒</div>
-        <h2 style="font-family:'Fredoka One';">Aitana</h2>
-        <div style="font-size:2.5rem; color:var(--soc); font-family:'Fredoka One'; margin:15px 0;">🪙 <span id="stat-coins">0</span></div>
-        <p style="color:var(--muted);">¡Seguí así para ganar más estrellas!</p>
-      </div>
-    </div>
-	<div class="screen" id="screen-profile-selector" style="text-align:center; justify-content:center; align-items:center; padding-top:100px;">
-  <h1 style="font-family:'Fredoka One'; margin-bottom:30px; font-size:2rem;">¿Quién va a jugar hoy?</h1>
-  <div style="display:flex; gap:20px; justify-content:center;">
-    <div onclick="selectProfile('Aitana')" style="cursor:pointer;">
-      <div style="font-size:5rem; background:var(--card); padding:20px; border-radius:50%; border:4px solid var(--rot);">🧒</div>
-      <p style="font-family:'Fredoka One'; margin-top:10px;">AITANA</p>
-    </div>
-    <div onclick="selectProfile('Invitado')" style="cursor:pointer;">
-      <div style="font-size:5rem; background:var(--card); padding:20px; border-radius:50%; border:4px solid var(--muted);">👤</div>
-      <p style="font-family:'Fredoka One'; margin-top:10px;">INVITADO</p>
-    </div>
+	  <div class="screen" id="screen-profile-selector" style="text-align:center; justify-content:center; align-items:center; padding-top:60px;">
+  <div style="font-size: 5rem; margin-bottom: 10px;">🚀</div>
+  <h1 style="font-family:'Fredoka One'; margin-bottom:10px; font-size:2rem;">¡Hola, Explorador/a!</h1>
+  <p style="color:var(--muted); margin-bottom:30px;">Ingresá tu nombre para comenzar la misión</p>
+  
+  <div style="max-width:300px; margin: 0 auto;">
+    <input type="text" id="player-name-input" placeholder="Tu nombre aquí..." 
+           style="width:100%; padding:15px; border-radius:15px; border:2px solid var(--card2); background:var(--card); color:white; font-size:1.1rem; text-align:center; margin-bottom:15px; outline:none; font-family:'Nunito';">
+    
+    <button onclick="loginExplorador()" 
+            style="width:100%; padding:16px; border-radius:15px; border:none; background:linear-gradient(135deg, var(--rot), var(--len)); color:white; font-family:'Fredoka One'; font-size:1.2rem; cursor:pointer; box-shadow: 0 4px 15px rgba(162,89,255,0.4);">
+      ¡DESPEGAR! 
+    </button>
   </div>
 </div>
+
     <nav class="bottom-nav">
       <button class="nav-btn active" onclick="navTo('home')">🏠<br>Inicio</button>
       <button class="nav-btn" onclick="navTo('profile')">👤<br>Perfil</button>
@@ -1490,7 +1486,9 @@ nivel31: {
   }
 };
     /* --- LÓGICA DE NAVEGACIÓN Y JUEGO --- */
-    function navTo(screenId) {
+    /* --- REEMPLAZO TOTAL DE LÓGICA --- */
+
+function navTo(screenId) {
     // 1. Ocultamos TODAS las pantallas de verdad
     document.querySelectorAll('.screen').forEach(s => {
         s.classList.remove('active');
@@ -1500,14 +1498,14 @@ nivel31: {
     // 2. Buscamos la pantalla destino
     const target = document.getElementById('screen-' + screenId);
     if (target) {
-        target.style.display = 'block'; // La hacemos visible
-        setTimeout(() => target.classList.add('active'), 10); // Le damos el efecto visual
+        // Si es el login, usamos flex para centrar, si no, block
+        target.style.display = (screenId === 'profile-selector') ? 'flex' : 'block'; 
+        setTimeout(() => target.classList.add('active'), 10);
     }
 
     // 3. Actualizamos los botones de la barra de navegación
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     
-    // Usamos IDs para los botones si los tienes, o mantenemos tu lógica de nth-child
     if(screenId === 'home') {
         const homeBtn = document.querySelector('.nav-btn:nth-child(1)');
         if(homeBtn) homeBtn.classList.add('active');
@@ -1518,69 +1516,69 @@ nivel31: {
         document.getElementById('stat-coins').textContent = state.coins;
     }
 }
-    function renderLevels() {
-      const grid = document.getElementById('levels-grid');
-      grid.innerHTML = '';
-      for (let i = 1; i <= 40; i++) {
+
+function renderLevels() {
+    const grid = document.getElementById('levels-grid');
+    if(!grid) return;
+    grid.innerHTML = '';
+    for (let i = 1; i <= 40; i++) {
         const isLocked = i > 1 && !state.completedLevels.includes(i - 1);
         const card = document.createElement('div');
         card.className = `level-card ${isLocked ? 'locked' : ''} ${state.completedLevels.includes(i) ? 'completed' : ''}`;
         card.innerHTML = `
-          <div style="font-size:2rem; margin-bottom:10px;">${isLocked ? '🔒' : '🚀'}</div>
-          <div style="font-family:'Fredoka One';">NIVEL ${i}</div>
+            <div style="font-size:2rem; margin-bottom:10px;">${isLocked ? '🔒' : '🚀'}</div>
+            <div style="font-family:'Fredoka One';">NIVEL ${i}</div>
         `;
         if (!isLocked) card.onclick = () => selectLevel(i);
         grid.appendChild(card);
-      }
     }
+}
 
-    function selectLevel(num) {
-      state.currentLevel = num;
-      currentIntroIndex = 0;
-      renderIntroStep();
-      navTo('intro');
-    }
+function selectLevel(num) {
+    state.currentLevel = num;
+    currentIntroIndex = 0;
+    renderIntroStep();
+    navTo('intro');
+}
 
-    function renderIntroStep() {
-      const levelNum = state.currentLevel;
-      const subjectKey = subjectsOrder[currentIntroIndex];
-      const m = subjectMeta[subjectKey];
-      const info = (napContent[levelNum] && napContent[levelNum][subjectKey]) || { txt: "¡A repasar!" };
+function renderIntroStep() {
+    const levelNum = state.currentLevel;
+    const subjectKey = subjectsOrder[currentIntroIndex];
+    const m = subjectMeta[subjectKey];
+    const info = (napContent[levelNum] && napContent[levelNum][subjectKey]) || { txt: "¡A repasar!" };
 
-      document.getElementById('intro-badge').textContent = `Misión ${levelNum} • Paso ${currentIntroIndex + 1} de 4`;
-      document.getElementById('intro-title').textContent = `Repasamos ${m.label}`;
+    document.getElementById('intro-badge').textContent = `Misión ${levelNum} • Paso ${currentIntroIndex + 1} de 4`;
+    document.getElementById('intro-title').textContent = `Repasamos ${m.label}`;
 
-      const list = document.getElementById('intro-subjects');
-      list.innerHTML = `
+    const list = document.getElementById('intro-subjects');
+    list.innerHTML = `
         <div style="text-align: center; padding: 20px 10px; animation: fadeIn 0.4s ease;">
-          <div style="font-size: 4rem; margin-bottom: 15px;">${m.icon}</div>
-          <h2 class="${m.colorClass}" style="font-family: 'Fredoka One'; margin-bottom: 15px;">${m.label}</h2>
-          <p style="font-size: 1.1rem; line-height: 1.6; color: var(--white); background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1);">
-            ${info.txt}
-          </p>
+            <div style="font-size: 4rem; margin-bottom: 15px;">${m.icon}</div>
+            <h2 class="${m.colorClass}" style="font-family: 'Fredoka One'; margin-bottom: 15px;">${m.label}</h2>
+            <p style="font-size: 1.1rem; line-height: 1.6; color: var(--white); background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1);">
+                ${info.txt}
+            </p>
         </div>
-      `;
+    `;
 
-      const startBtn = document.getElementById('btn-start-level');
-      if (currentIntroIndex < subjectsOrder.length - 1) {
+    const startBtn = document.getElementById('btn-start-level');
+    if (currentIntroIndex < subjectsOrder.length - 1) {
         startBtn.innerHTML = "Siguiente Materia ➔";
         startBtn.onclick = () => { currentIntroIndex++; renderIntroStep(); };
-      } else {
+    } else {
         startBtn.innerHTML = "¡Listo, a Jugar! 🎮";
         startBtn.onclick = () => { startLevel(); };
-      }
     }
+}
 
-    function startLevel() {
+function startLevel() {
     const levelKey = 'nivel' + state.currentLevel;
     const data = curriculumData[levelKey];
     questionQueue = [];
 
-    // Lógica especial para Niveles de Examen (como el 40)
     if (data.examen_final) {
         questionQueue = [...data.examen_final.map(q => ({...q, subject: 'examen_final'}))];
     } else {
-        // Carga normal por materias
         subjectsOrder.forEach(sub => {
             if(data[sub]) {
                 questionQueue.push(...data[sub].map(q => ({...q, subject: sub})));
@@ -1588,28 +1586,21 @@ nivel31: {
         });
     }
 
-    if (questionQueue.length === 0) {
-        console.error("Error: No se encontraron preguntas para el nivel " + state.currentLevel);
-        return;
-    }
-
+    if (questionQueue.length === 0) return;
     currentQIndex = 0;
     navTo('game');
     renderQuestion();
 }
 
-  /* --- FUNCIONES DE JUEGO --- */
 function renderQuestion() {
     document.querySelectorAll('button').forEach(b => b.disabled = false);
-    const q = questionQueue[currentQIndex]; // Usamos 'q' para ser consistentes
+    const q = questionQueue[currentQIndex];
     
-    // Actualizar Progreso
     document.getElementById('progress-label').textContent = `Pregunta ${currentQIndex + 1} de ${questionQueue.length}`;
     const pct = Math.round((currentQIndex / questionQueue.length) * 100);
     document.getElementById('progress-pct').textContent = pct + '%';
     document.getElementById('progress-fill').style.width = pct + '%';
 
-    // Actualizar la "píldora" de materia
     const pill = document.getElementById('subject-pill');
     if ([10, 20, 30, 40].includes(state.currentLevel) || q.subject === 'examen_final') {
         pill.textContent = `🏆 EXAMEN FINAL`;
@@ -1622,7 +1613,6 @@ function renderQuestion() {
 
     document.getElementById('q-text').textContent = q.question || q.q;
     
-    // Reset de zonas
     ['zone-mc', 'zone-tf', 'zone-fitb', 'zone-sort'].forEach(z => {
         const el = document.getElementById(z);
         if(el) el.style.display = 'none';
@@ -1630,7 +1620,6 @@ function renderQuestion() {
     document.getElementById('feedback-panel').style.display = 'none';
     document.getElementById('next-btn').style.display = 'none';
 
-    // --- LÓGICA DE VISUALIZACIÓN POR TIPO ---
     if(q.type === 'multiple-choice' || q.type === 'intruder' || q.type === 'sequence') {
         const zone = document.getElementById('zone-mc');
         zone.style.display = 'flex';
@@ -1642,34 +1631,26 @@ function renderQuestion() {
             btn.onclick = () => checkAnswer(opt);
             zone.appendChild(btn);
         });
-
     } else if(q.type === 'true-false') {
         document.getElementById('zone-tf').style.display = 'grid';
-
     } else if(q.type === 'fill-in-the-blank' || q.type === 'fast') {
         document.getElementById('zone-fitb').style.display = 'block';
         const input = document.getElementById('fitb-input');
         input.value = '';
         setTimeout(() => input.focus(), 100); 
-
-    } else if (q.type === 'sort') { // Corregido: usamos 'q'
+    } else if (q.type === 'sort') {
         const zoneSort = document.getElementById('zone-sort');
         zoneSort.style.display = 'block';
         const sortList = document.getElementById('sort-list');
         sortList.innerHTML = '';
-
-        // Mezclamos las opciones
         const shuffled = [...q.options].sort(() => Math.random() - 0.5);
-
         shuffled.forEach(text => {
             const item = document.createElement('div');
             item.className = 'sort-item';
             item.draggable = true; 
             item.innerText = text;
-
             item.addEventListener('dragstart', () => item.classList.add('dragging'));
             item.addEventListener('dragend', () => item.classList.remove('dragging'));
-
             sortList.appendChild(item);
         });
 
@@ -1683,11 +1664,11 @@ function renderQuestion() {
                 sortList.insertBefore(dragging, afterElement);
             }
         });
-    } // <-- AQUÍ FALTABA ESTA LLAVE
-} // <-- Y AQUÍ FALTABA LA OTRA QUE CIERRA LA FUNCIÓN PRINCIPAL
+    }
+}
+
 function getDragAfterElement(container, y) {
     const draggableElements = [...container.querySelectorAll('.sort-item:not(.dragging)')];
-
     return draggableElements.reduce((closest, child) => {
         const box = child.getBoundingClientRect();
         const offset = y - box.top - box.height / 2;
@@ -1698,12 +1679,13 @@ function getDragAfterElement(container, y) {
         }
     }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
+
 function checkAnswer(val) {
     const q = questionQueue[currentQIndex];
     let isCorrect = false;
 
     if (Array.isArray(q.answer)) {
-        const valNormalizado = val.map(v => String(v).toLowerCase().trim());
+        const valNormalizado = Array.isArray(val) ? val.map(v => String(v).toLowerCase().trim()) : [String(val).toLowerCase().trim()];
         const ansNormalizado = q.answer.map(v => String(v).toLowerCase().trim());
         isCorrect = JSON.stringify(valNormalizado) === JSON.stringify(ansNormalizado);
     } else {
@@ -1729,7 +1711,6 @@ function checkAnswer(val) {
     }
 
     document.getElementById('next-btn').style.display = 'block';
-    // AQUÍ ACTUALIZAMOS LOS IDs DE LOS BOTONES A DESACTIVAR
     document.querySelectorAll('.option-btn, #btn-true, #btn-false, #btn-fitb, #btn-sort').forEach(b => b.disabled = true);
 }
 
@@ -1738,70 +1719,70 @@ function answerTF(val) { checkAnswer(val); }
 function submitFITB() { 
     const input = document.getElementById('fitb-input');
     const val = input.value.trim();
-    if(val !== "") {
-        checkAnswer(val); 
-    }
+    if(val !== "") checkAnswer(val); 
 }
 
 function submitSort() {
     const items = Array.from(document.querySelectorAll('.sort-item')).map(i => i.textContent.trim());
-    const q = questionQueue[currentQIndex];
-    
-    // Comparamos el orden del usuario contra el array de respuesta correcta
-    // Usamos JSON.stringify para comparar el contenido de los dos arrays fácilmente
-    if (JSON.stringify(items) === JSON.stringify(q.answer)) {
-        checkAnswer(q.answer); // Correcto
-    } else {
-        checkAnswer("INCORRECTO_SORT_TRIGGER"); // Esto disparará el feedback de error
-    }
+    checkAnswer(items); // Pasamos el array completo para que lo compare checkAnswer
 }
 
 function nextQuestion() {
     currentQIndex++;
-    if(currentQIndex < questionQueue.length) {
-        renderQuestion();
-    } else {
-        finishLevel();
-    }
+    if(currentQIndex < questionQueue.length) renderQuestion();
+    else finishLevel();
 }
-     function finishLevel() {
-      if(!state.completedLevels.includes(state.currentLevel)) {
+
+function finishLevel() {
+    if(!state.completedLevels.includes(state.currentLevel)) {
         state.completedLevels.push(state.currentLevel);
         saveProgress(); 
-      }
-      navTo('results');
-      document.getElementById('result-title').textContent = '¡NIVEL ' + state.currentLevel + ' COMPLETADO!';
-      document.getElementById('result-score').textContent = '🪙 ' + state.coins;
-      document.getElementById('result-sub').textContent = '¡Sos una verdadera experta, Aitana!';
-      renderLevels();
     }
+    navTo('results');
+    document.getElementById('result-title').textContent = '¡NIVEL ' + state.currentLevel + ' COMPLETADO!';
+    document.getElementById('result-score').textContent = '🪙 ' + state.coins;
+    document.getElementById('result-sub').textContent = `¡Sos una verdadera experta, ${state.currentUser || 'Aitana'}!`;
+    renderLevels();
+}
 
-    function goHome() { 
-        navTo('home'); 
+function goHome() { navTo('home'); }
+
+// --- LÓGICA DE LOGIN Y ARRANQUE ---
+
+async function loginExplorador() {
+    const input = document.getElementById('player-name-input');
+    const name = input.value.trim();
+    if (name.length < 2) {
+        alert("¡Escribí tu nombre de exploradora!");
+        return;
     }
+    state.currentUser = name;
+    const profName = document.querySelector('#screen-profile h2');
+    if(profName) profName.textContent = name;
 
-    // Esta es la función que limpia todo al cargar
-    window.onload = () => {
-        // 1. Dibujamos niveles
-        renderLevels();
-        
-        // 2. Ocultamos TODAS las pantallas primero
-        document.querySelectorAll('.screen').forEach(s => {
-            s.classList.remove('active');
-            s.style.display = 'none';
-        });
+    // MOSTRAR NAV DE ABAJO
+    const mainNav = document.querySelector('.bottom-nav');
+    if (mainNav) mainNav.style.display = 'flex';
 
-        // 3. Mostramos SOLAMENTE el selector de perfil
-        const selector = document.getElementById('screen-profile-selector');
-        if (selector) {
-            selector.style.display = 'block';
-            selector.classList.add('active');
-        }
-// 4. Aseguramos que la navegación esté oculta al inicio
-        const mainNav = document.getElementById('main-nav');
-        if (mainNav) mainNav.style.display = 'none';
-        console.log("¡App de Aiti lista y en espera de perfil!");
-    };
+    await loadProgress();
+    navTo('home');
+}
+
+window.onload = () => {
+    renderLevels();
+    // Ocultar todo al inicio
+    document.querySelectorAll('.screen').forEach(s => {
+        s.classList.remove('active');
+        s.style.display = 'none';
+    });
+    // Esconder navegación
+    const mainNav = document.querySelector('.bottom-nav');
+    if (mainNav) mainNav.style.display = 'none';
+
+    // Mostrar login
+    navTo('profile-selector');
+};
+    
   </script>
 </body>
 </html>
