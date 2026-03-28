@@ -46,8 +46,7 @@
 .bg-rot { background: rgba(162, 89, 255, 0.2); border: 1px solid var(--rot); color: white; }
 
 /* Estilo base para la etiqueta de materia en el juego */
-.subject-pill { display: inline-block; padding: 6px 16px; border-radius: 50px; font-weight: 800; margin-bottom: 20px; font-size: 0.85rem; 
-  text-transform: uppercase; letter-spacing: 0.5px; }
+     .subject-pill { display: inline-block; padding: 8px 18px; border-radius: 50px; font-weight: 800; margin-bottom: 25px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; position: relative; z-index: 5; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
 	
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Nunito', sans-serif; background: var(--bg); color: var(--white); min-height: 100vh; overflow-x: hidden; }
@@ -1644,6 +1643,15 @@ function renderQuestion() {
     });
 
     document.getElementById('q-text').textContent = q.question || q.q;
+	const pill = document.getElementById('subject-pill');
+if (q.subject && subjectMeta[q.subject]) {
+    const meta = subjectMeta[q.subject];
+    pill.textContent = meta.label;
+    pill.className = `subject-pill ${meta.bgClass} ${meta.colorClass}`;
+    pill.style.display = 'inline-block';
+} else {
+    pill.style.display = 'none';
+}
 
     // 4. Lógica por tipo (Sin activar el cursor automáticamente)
     if(q.type === 'multiple-choice' || q.type === 'intruder' || q.type === 'sequence') {
@@ -1682,6 +1690,10 @@ function renderQuestion() {
             item.addEventListener('dragstart', () => item.classList.add('dragging'));
             item.addEventListener('dragend', () => item.classList.remove('dragging'));
             sortList.appendChild(item);
+			});
+		    new Sortable(sortList, { 
+            animation: 150, 
+            ghostClass: 'dragging' 
         });
     }
 }	  
@@ -1774,9 +1786,8 @@ async function loginExplorador() {
         return;
     }
     state.currentUser = name;
-    const profName = document.querySelector('#screen-profile h2');
-    if(profName) profName.textContent = name;
-
+    const heroTitle = document.querySelector('#screen-home .hero-title');
+    if(heroTitle) heroTitle.innerHTML = `¡Hola,<br/>${name}! 🚀`;
     // MOSTRAR NAV DE ABAJO
     const mainNav = document.querySelector('.bottom-nav');
     if (mainNav) mainNav.style.display = 'flex';
