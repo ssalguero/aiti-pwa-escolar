@@ -1721,10 +1721,10 @@ function nextQuestion() {
         finishLevel();
     }
 }
-      function finishLevel() {
+     function finishLevel() {
       if(!state.completedLevels.includes(state.currentLevel)) {
         state.completedLevels.push(state.currentLevel);
-        saveProgress(); // GUARDA EL NIVEL COMPLETADO
+        saveProgress(); 
       }
       navTo('results');
       document.getElementById('result-title').textContent = '¡NIVEL ' + state.currentLevel + ' COMPLETADO!';
@@ -1733,40 +1733,37 @@ function nextQuestion() {
       renderLevels();
     }
 
-    // 1. FUNCIÓN PARA VOLVER AL MAPA DE NIVELES
-function goHome() { 
-    // Si ya eligió perfil, vamos al mapa. Si no, al selector.
-    if (state.currentUser) {
+    function goHome() { 
         navTo('home'); 
-    } else {
-        logout(); // Seguridad: si no hay usuario, mandamos al selector
-    }
-}
-
-// 2. LO QUE PASA APENAS SE ABRE LA APP
-window.onload = () => {
-    // Dibujamos los niveles en el fondo
-    renderLevels();
-    
-    // RESET DE PANTALLAS: Ocultamos todo para empezar de cero
-    document.querySelectorAll('.screen').forEach(s => {
-        s.classList.remove('active');
-        s.style.display = 'none';
-    });
-
-    // MOSTRAMOS EL SELECTOR DE PERFIL
-    const selector = document.getElementById('screen-profile-selector');
-    if (selector) {
-        selector.classList.add('active');
-        selector.style.display = 'block';
     }
 
-    // OCULTAMOS LA BARRA DE NAVEGACIÓN (Solo aparece tras elegir nombre)
-    const mainNav = document.getElementById('main-nav');
-    if (mainNav) {
-        mainNav.style.display = 'none';
-    }
-};
+    // Esta es la función que limpia todo al cargar
+    window.onload = () => {
+        // 1. Dibujamos niveles
+        renderLevels();
+        
+        // 2. Ocultamos TODAS las pantallas primero
+        document.querySelectorAll('.screen').forEach(s => {
+            s.classList.remove('active');
+            s.style.display = 'none';
+        });
+
+        // 3. Mostramos SOLAMENTE el selector de perfil
+        const selector = document.getElementById('screen-profile-selector');
+        if (selector) {
+            selector.style.display = 'block';
+            selector.classList.add('active');
+        }
+
+        // 4. Aseguramos que la navegación esté oculta al inicio
+        const mainNav = document.getElementById('main-nav');
+        if (mainNav) mainNav.style.display = 'none';
+        
+        console.log("¡App de Aiti lista y en espera de perfil!");
+    };
+  </script>
+</body>
+</html>
 </script>
 </body>
 </html>
