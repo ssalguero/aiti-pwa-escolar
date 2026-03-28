@@ -46,16 +46,8 @@
 .bg-rot { background: rgba(162, 89, 255, 0.2); border: 1px solid var(--rot); color: white; }
 
 /* Estilo base para la etiqueta de materia en el juego */
-.subject-pill {
-  display: inline-block;
-  padding: 6px 16px;
-  border-radius: 50px;
-  font-weight: 800;
-  margin-bottom: 20px;
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
+.subject-pill { display: inline-block; padding: 6px 16px; border-radius: 50px; font-weight: 800; margin-bottom: 20px; font-size: 0.85rem; 
+  text-transform: uppercase; letter-spacing: 0.5px; }
 	
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Nunito', sans-serif; background: var(--bg); color: var(--white); min-height: 100vh; overflow-x: hidden; }
@@ -81,16 +73,19 @@
     .intro-subjects-list { margin: 20px 0; }
     .question-card { background: var(--card); border-radius: var(--radius); padding: 22px; margin-bottom: 18px; border: 1.5px solid var(--card2); }
     .options-grid { display: flex; flex-direction: column; gap: 10px; }
-    .option-btn { background: var(--card2); border: 2px solid transparent; border-radius: 14px; padding: 14px; color: white; font-weight: 700; cursor: pointer; text-align: left; }
-    
+    .option-btn { width: 100%; padding: 15px; border-radius: 15px; border: 2px solid var(--card2); background: var(--card); color: white; font-family: 'Nunito', sans-serif; font-weight: 700; cursor: pointer; transition: all 0.2s; text-align: center; }
+
+/* Esta es la parte que hace que brille al tocarlo */
+    .option-btn:active, .option-btn:focus { background: var(--rot) !important; box-shadow: 0 0 15px var(--rot); border-color: white !important; transform: scale(0.95); }
     .sort-item { background: var(--card2); border: 2px solid var(--rot); border-radius: 12px; padding: 14px; margin-bottom: 8px; font-family: 'Fredoka One'; cursor: grab; }
 
-	.sort-item.dragging { opacity: 1 !important; background: var(--rot) !important; border: 2px solid white !important;
-  transform: scale(1.05);box-shadow: 0 10px 20px rgba(0,0,0,0.4); } 
+	.sort-item.dragging { opacity: 1 !important; background: var(--rot) !important; border: 2px solid white !important; box-shadow: 0 8px 25px rgba(0,0,0,0.5); }
 	  
-    .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: rgba(15,10,42,0.95); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid var(--card2); }
-    .nav-btn { background: none; border: none; color: var(--muted); font-size: 0.8rem; cursor: pointer; display: flex; flex-direction: column; align-items: center; }
+    .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: rgba(15,10,42,0.95); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid var(--card2); z-index: 100; }    
+	 body.in-game .bottom-nav { display: none !important; }
+	.nav-btn { background: none; border: none; color: var(--muted); font-size: 0.8rem; cursor: pointer; display: flex; flex-direction: column; align-items: center; }
     .nav-btn.active { color: var(--rot); }
+	    
   </style>
   
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -145,8 +140,10 @@
         <button id="btn-sort" onclick="submitSort()" style="width:100%; padding:15px; border-radius:10px; border:none; background:var(--rot); color:white; font-weight:800; margin-top:10px;">REVISAR ORDEN</button>
       </div>
       <div id="feedback-panel" style="display:none; margin-top:15px; padding:15px; border-radius:10px; text-align:center; font-weight:800;"></div>
-      <button id="next-btn" style="display:none; width:100%; margin-top:15px; padding:15px; border-radius:10px; border:none; background:var(--white); color:var(--bg); font-weight:800;" onclick="nextQuestion()">SIGUIENTE →</button>
-    </div>
+      <button id="next-btn" style="display:none; width:100%; margin-top:15px; padding:15px; border-radius:10px; border:none; background: var(--nat) !important; color: var(--bg) !important; 
+	   font-family: 'Fredoka One', cursive; box-shadow: 0 4px 15px rgba(76,217,123,0.3); " onclick="nextQuestion()">SIGUIENTE →</button>
+       
+	</div>
 
     <div class="screen" id="screen-results" style="text-align:center; justify-content:center;">
       <div style="font-size:5rem;">🏆</div>
@@ -187,17 +184,28 @@
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);	
 
     /* --- CONFIGURACIÓN Y ESTADO --- */
-    const state = { currentLevel: 1, coins: 0, completedLevels: [] };
-    const subjectMeta = {
-      matematica: { label: "Matemática", icon: "🔢", colorClass: "c-mat", bgClass: "bg-mat" },
-      lengua: { label: "Lengua", icon: "📚", colorClass: "c-len", bgClass: "bg-len" },
-      sociales: { label: "Sociales", icon: "🗺️", colorClass: "c-soc", bgClass: "bg-soc" },
-      naturales: { label: "Naturales", icon: "🌿", colorClass: "c-nat", bgClass: "bg-nat" }
-    };
-    const subjectsOrder = ['matematica', 'lengua', 'sociales', 'naturales'];
-    let currentIntroIndex = 0;
-    let questionQueue = [];
-    let currentQIndex = 0;
+
+let state = {
+    currentUser: '',
+    currentLevel: 1,
+    completedLevels: [],
+    coins: 0
+};
+
+// Configuración de materias
+const subjectMeta = {
+    matematica: { label: "Matemática", icon: "🔢", colorClass: "c-mat", bgClass: "bg-mat" },
+    lengua: { label: "Lengua", icon: "📚", colorClass: "c-len", bgClass: "bg-len" },
+    sociales: { label: "Sociales", icon: "🗺️", colorClass: "c-soc", bgClass: "bg-soc" },
+    naturales: { label: "Naturales", icon: "🌿", colorClass: "c-nat", bgClass: "bg-nat" }
+};
+
+const subjectsOrder = ['matematica', 'lengua', 'sociales', 'naturales'];
+
+// Variables de control de flujo
+let currentIntroIndex = 0;
+let questionQueue = [];
+let currentQIndex = 0;0;
 
     /* --- FUNCIONES DE BASE DE DATOS --- */
     async function loadProgress() {
@@ -1487,37 +1495,45 @@ nivel31: {
 };
     /* --- LÓGICA DE NAVEGACIÓN Y JUEGO --- */
     /* --- REEMPLAZO TOTAL DE LÓGICA --- */
+ function navTo(screenId) {
+    // 1. Quitamos la marca de "estamos jugando" siempre al cambiar
+    document.body.classList.remove('in-game');
 
-function navTo(screenId) {
-    // 1. Ocultamos TODAS las pantallas de verdad
+    // 2. Ocultamos todas las pantallas
     document.querySelectorAll('.screen').forEach(s => {
         s.classList.remove('active');
         s.style.display = 'none';
     });
 
-    // 2. Buscamos la pantalla destino
+    // 3. Si entramos al juego o a la intro, OCULTAMOS la barra inferior
+    // Usamos 'in-game' que es la clase que pusimos en el CSS
+    if (screenId === 'game' || screenId === 'intro') {
+        document.body.classList.add('in-game');
+    }
+
     const target = document.getElementById('screen-' + screenId);
     if (target) {
-        // Si es el login, usamos flex para centrar, si no, block
-        target.style.display = (screenId === 'profile-selector') ? 'flex' : 'block'; 
+        // Si es el selector de perfil usamos flex, si no block
+        target.style.display = (screenId === 'profile-selector') ? 'flex' : 'block';
         setTimeout(() => target.classList.add('active'), 10);
     }
 
-    // 3. Actualizamos los botones de la barra de navegación
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    
-    if(screenId === 'home') {
-        const homeBtn = document.querySelector('.nav-btn:nth-child(1)');
-        if(homeBtn) homeBtn.classList.add('active');
+    // 4. Actualizar botones de navegación (solo si no estamos jugando)
+    const mainNav = document.querySelector('.bottom-nav');
+    if (mainNav) {
+        // Solo mostramos la nav si NO estamos en juego, intro o login
+        if (screenId !== 'game' && screenId !== 'intro' && screenId !== 'profile-selector') {
+            mainNav.style.display = 'flex';
+        } else {
+            mainNav.style.display = 'none';
+        }
     }
-    if(screenId === 'profile') {
-        const profBtn = document.querySelector('.nav-btn:nth-child(2)');
-        if(profBtn) profBtn.classList.add('active');
-        document.getElementById('stat-coins').textContent = state.coins;
-    }
-}
 
-function renderLevels() {
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    if(screenId === 'home') document.querySelector('.nav-btn:nth-child(1)')?.classList.add('active');
+    if(screenId === 'profile') document.querySelector('.nav-btn:nth-child(2)')?.classList.add('active');
+}
+	function renderLevels() {
     const grid = document.getElementById('levels-grid');
     if(!grid) return;
     grid.innerHTML = '';
@@ -1592,80 +1608,6 @@ function startLevel() {
     renderQuestion();
 }
 
-function renderQuestion() {
-    document.querySelectorAll('button').forEach(b => b.disabled = false);
-    const q = questionQueue[currentQIndex];
-    
-    document.getElementById('progress-label').textContent = `Pregunta ${currentQIndex + 1} de ${questionQueue.length}`;
-    const pct = Math.round((currentQIndex / questionQueue.length) * 100);
-    document.getElementById('progress-pct').textContent = pct + '%';
-    document.getElementById('progress-fill').style.width = pct + '%';
-
-    const pill = document.getElementById('subject-pill');
-    if ([10, 20, 30, 40].includes(state.currentLevel) || q.subject === 'examen_final') {
-        pill.textContent = `🏆 EXAMEN FINAL`;
-        pill.className = `subject-pill bg-rot`; 
-    } else {
-        const m = subjectMeta[q.subject];
-        pill.textContent = `${m.icon} ${m.label}`;
-        pill.className = `subject-pill ${m.bgClass} ${m.colorClass}`;
-    }
-
-    document.getElementById('q-text').textContent = q.question || q.q;
-    
-    ['zone-mc', 'zone-tf', 'zone-fitb', 'zone-sort'].forEach(z => {
-        const el = document.getElementById(z);
-        if(el) el.style.display = 'none';
-    });
-    document.getElementById('feedback-panel').style.display = 'none';
-    document.getElementById('next-btn').style.display = 'none';
-
-    if(q.type === 'multiple-choice' || q.type === 'intruder' || q.type === 'sequence') {
-        const zone = document.getElementById('zone-mc');
-        zone.style.display = 'flex';
-        zone.innerHTML = '';
-        q.options.forEach(opt => {
-            const btn = document.createElement('button');
-            btn.className = 'option-btn';
-            btn.textContent = opt;
-            btn.onclick = () => checkAnswer(opt);
-            zone.appendChild(btn);
-        });
-    } else if(q.type === 'true-false') {
-        document.getElementById('zone-tf').style.display = 'grid';
-    } else if(q.type === 'fill-in-the-blank' || q.type === 'fast') {
-        document.getElementById('zone-fitb').style.display = 'block';
-        const input = document.getElementById('fitb-input');
-        input.value = '';
-        setTimeout(() => input.focus(), 100); 
-    } else if (q.type === 'sort') {
-        const zoneSort = document.getElementById('zone-sort');
-        zoneSort.style.display = 'block';
-        const sortList = document.getElementById('sort-list');
-        sortList.innerHTML = '';
-        const shuffled = [...q.options].sort(() => Math.random() - 0.5);
-        shuffled.forEach(text => {
-            const item = document.createElement('div');
-            item.className = 'sort-item';
-            item.draggable = true; 
-            item.innerText = text;
-            item.addEventListener('dragstart', () => item.classList.add('dragging'));
-            item.addEventListener('dragend', () => item.classList.remove('dragging'));
-            sortList.appendChild(item);
-        });
-
-        sortList.addEventListener('dragover', e => {
-            e.preventDefault();
-            const dragging = document.querySelector('.dragging');
-            const afterElement = getDragAfterElement(sortList, e.clientY);
-            if (afterElement == null) {
-                sortList.appendChild(dragging);
-            } else {
-                sortList.insertBefore(dragging, afterElement);
-            }
-        });
-    }
-}
 
 function getDragAfterElement(container, y) {
     const draggableElements = [...container.querySelectorAll('.sort-item:not(.dragging)')];
@@ -1680,10 +1622,74 @@ function getDragAfterElement(container, y) {
     }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
 
+function renderQuestion() {
+    // 1. Limpieza total de estados previos
+    document.querySelectorAll('button').forEach(b => b.disabled = false);
+    const fb = document.getElementById('feedback-panel');
+    const nextBtn = document.getElementById('next-btn');
+    fb.style.display = 'none';
+    nextBtn.style.display = 'none'; // Aseguramos que empiece oculto
+
+    const q = questionQueue[currentQIndex];
+
+    // 2. Actualizar textos y progreso
+    document.getElementById('progress-label').textContent = `Pregunta ${currentQIndex + 1} de ${questionQueue.length}`;
+    const pct = Math.round((currentQIndex / questionQueue.length) * 100);
+    document.getElementById('progress-fill').style.width = pct + '%';
+
+    // 3. Reset de zonas
+    ['zone-mc', 'zone-tf', 'zone-fitb', 'zone-sort'].forEach(z => {
+        const el = document.getElementById(z);
+        if(el) el.style.display = 'none';
+    });
+
+    document.getElementById('q-text').textContent = q.question || q.q;
+
+    // 4. Lógica por tipo (Sin activar el cursor automáticamente)
+    if(q.type === 'multiple-choice' || q.type === 'intruder' || q.type === 'sequence') {
+        const zone = document.getElementById('zone-mc');
+        zone.style.display = 'flex';
+        zone.innerHTML = '';
+        q.options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.textContent = opt;
+            btn.onclick = (e) => {
+                // Iluminar el botón clickeado
+                e.target.style.background = 'var(--rot)';
+                checkAnswer(opt);
+            };
+            zone.appendChild(btn);
+        });
+    } else if(q.type === 'true-false') {
+        document.getElementById('zone-tf').style.display = 'grid';
+    } else if(q.type === 'fill-in-the-blank' || q.type === 'fast') {
+        document.getElementById('zone-fitb').style.display = 'block';
+        const input = document.getElementById('fitb-input');
+        input.value = '';
+        // SOLO damos foco si es realmente necesario para evitar el cursor molesto
+    } else if (q.type === 'sort') {
+        const zoneSort = document.getElementById('zone-sort');
+        zoneSort.style.display = 'block';
+        const sortList = document.getElementById('sort-list');
+        sortList.innerHTML = '';
+        const shuffled = [...q.options].sort(() => Math.random() - 0.5);
+        shuffled.forEach(text => {
+            const item = document.createElement('div');
+            item.className = 'sort-item';
+            item.draggable = true;
+            item.innerText = text;
+            item.addEventListener('dragstart', () => item.classList.add('dragging'));
+            item.addEventListener('dragend', () => item.classList.remove('dragging'));
+            sortList.appendChild(item);
+        });
+    }
+}	  
 function checkAnswer(val) {
     const q = questionQueue[currentQIndex];
     let isCorrect = false;
 
+    // Normalización para comparar
     if (Array.isArray(q.answer)) {
         const valNormalizado = Array.isArray(val) ? val.map(v => String(v).toLowerCase().trim()) : [String(val).toLowerCase().trim()];
         const ansNormalizado = q.answer.map(v => String(v).toLowerCase().trim());
@@ -1693,6 +1699,8 @@ function checkAnswer(val) {
     }
 
     const fb = document.getElementById('feedback-panel');
+    const nextBtn = document.getElementById('next-btn'); // Referencia al botón siguiente
+
     fb.style.display = 'block';
 
     if (isCorrect) {
@@ -1701,8 +1709,11 @@ function checkAnswer(val) {
         fb.textContent = '¡Excelente! 🌟 +10 monedas';
         state.coins += 10;
         document.getElementById('coins-display').textContent = state.coins;
-        document.getElementById('stat-coins').textContent = state.coins;
-        saveProgress(); 
+        // Si tienes el elemento stat-coins en el perfil, actualízalo
+        const statCoins = document.getElementById('stat-coins');
+        if(statCoins) statCoins.textContent = state.coins;
+        
+        if(typeof saveProgress === 'function') saveProgress(); 
     } else {
         fb.style.background = 'rgba(255,107,53,0.2)';
         fb.style.color = 'var(--mat)';
@@ -1710,10 +1721,16 @@ function checkAnswer(val) {
         fb.textContent = '¡Casi! La respuesta era: ' + respuestaVisible;
     }
 
-    document.getElementById('next-btn').style.display = 'block';
-    document.querySelectorAll('.option-btn, #btn-true, #btn-false, #btn-fitb, #btn-sort').forEach(b => b.disabled = true);
+    // MOSTRAR EL BOTÓN SIGUIENTE (Esto corrige tu problema)
+    nextBtn.style.display = 'block';
+    
+    // Desactivar todos los botones para que no pueda marcar otra opción
+    document.querySelectorAll('.option-btn, #btn-true, #btn-false, #btn-fitb, #btn-sort').forEach(b => {
+        b.disabled = true;
+        b.style.opacity = "0.7";
+        b.style.cursor = "not-allowed";
+    });
 }
-
 function answerTF(val) { checkAnswer(val); }
 
 function submitFITB() { 
