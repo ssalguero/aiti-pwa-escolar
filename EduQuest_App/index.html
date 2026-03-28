@@ -163,7 +163,19 @@
         <p style="color:var(--muted);">¡Seguí así para ganar más estrellas!</p>
       </div>
     </div>
-
+	<div class="screen" id="screen-profile-selector" style="text-align:center; justify-content:center; align-items:center; padding-top:100px;">
+  <h1 style="font-family:'Fredoka One'; margin-bottom:30px; font-size:2rem;">¿Quién va a jugar hoy?</h1>
+  <div style="display:flex; gap:20px; justify-content:center;">
+    <div onclick="selectProfile('Aitana')" style="cursor:pointer;">
+      <div style="font-size:5rem; background:var(--card); padding:20px; border-radius:50%; border:4px solid var(--rot);">🧒</div>
+      <p style="font-family:'Fredoka One'; margin-top:10px;">AITANA</p>
+    </div>
+    <div onclick="selectProfile('Invitado')" style="cursor:pointer;">
+      <div style="font-size:5rem; background:var(--card); padding:20px; border-radius:50%; border:4px solid var(--muted);">👤</div>
+      <p style="font-family:'Fredoka One'; margin-top:10px;">INVITADO</p>
+    </div>
+  </div>
+</div>
     <nav class="bottom-nav">
       <button class="nav-btn active" onclick="navTo('home')">🏠<br>Inicio</button>
       <button class="nav-btn" onclick="navTo('profile')">👤<br>Perfil</button>
@@ -209,7 +221,21 @@
         updated_at: new Date() 
       }).eq('id', 1);
     }
+    async function selectProfile(name) {
+    state.currentUser = name; // Guardamos quién juega
+    
+    // 1. Mostramos la barra de navegación (ahora que ya entró)
+    const mainNav = document.querySelector('.bottom-nav');
+    if (mainNav) mainNav.style.display = 'flex';
 
+    // 2. Cargamos los puntos de la base de datos
+    await loadProgress();
+    
+    // 3. ¡Vamos al mapa de niveles!
+    navTo('home');
+    
+    console.log("Sesión iniciada como:", name);
+}
     /* --- CONTENIDO EDUCATIVO (NAP) --- */
 const napContent = {
 1: {
