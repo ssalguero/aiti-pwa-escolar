@@ -1465,16 +1465,33 @@ nivel31: {
 };
     /* --- LÓGICA DE NAVEGACIÓN Y JUEGO --- */
     function navTo(screenId) {
-      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-      document.getElementById('screen-' + screenId).classList.add('active');
-      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-      if(screenId === 'home') document.querySelector('.nav-btn:nth-child(1)').classList.add('active');
-      if(screenId === 'profile') {
-        document.querySelector('.nav-btn:nth-child(2)').classList.add('active');
-        document.getElementById('stat-coins').textContent = state.coins;
-      }
+    // 1. Ocultamos TODAS las pantallas de verdad
+    document.querySelectorAll('.screen').forEach(s => {
+        s.classList.remove('active');
+        s.style.display = 'none';
+    });
+
+    // 2. Buscamos la pantalla destino
+    const target = document.getElementById('screen-' + screenId);
+    if (target) {
+        target.style.display = 'block'; // La hacemos visible
+        setTimeout(() => target.classList.add('active'), 10); // Le damos el efecto visual
     }
 
+    // 3. Actualizamos los botones de la barra de navegación
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    
+    // Usamos IDs para los botones si los tienes, o mantenemos tu lógica de nth-child
+    if(screenId === 'home') {
+        const homeBtn = document.querySelector('.nav-btn:nth-child(1)');
+        if(homeBtn) homeBtn.classList.add('active');
+    }
+    if(screenId === 'profile') {
+        const profBtn = document.querySelector('.nav-btn:nth-child(2)');
+        if(profBtn) profBtn.classList.add('active');
+        document.getElementById('stat-coins').textContent = state.coins;
+    }
+}
     function renderLevels() {
       const grid = document.getElementById('levels-grid');
       grid.innerHTML = '';
@@ -1754,16 +1771,11 @@ function nextQuestion() {
             selector.style.display = 'block';
             selector.classList.add('active');
         }
-
-        // 4. Aseguramos que la navegación esté oculta al inicio
+// 4. Aseguramos que la navegación esté oculta al inicio
         const mainNav = document.getElementById('main-nav');
         if (mainNav) mainNav.style.display = 'none';
-        
         console.log("¡App de Aiti lista y en espera de perfil!");
     };
   </script>
-</body>
-</html>
-</script>
 </body>
 </html>
