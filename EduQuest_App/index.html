@@ -84,7 +84,9 @@
     .option-btn { background: var(--card2); border: 2px solid transparent; border-radius: 14px; padding: 14px; color: white; font-weight: 700; cursor: pointer; text-align: left; }
     
     .sort-item { background: var(--card2); border: 2px solid var(--rot); border-radius: 12px; padding: 14px; margin-bottom: 8px; font-family: 'Fredoka One'; cursor: grab; }
-    
+
+	.sort-item.dragging { opacity: 0.5; background: var(--pri); border: 2px dashed white; }  
+	  
     .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: rgba(15,10,42,0.95); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid var(--card2); }
     .nav-btn { background: none; border: none; color: var(--muted); font-size: 0.8rem; cursor: pointer; display: flex; flex-direction: column; align-items: center; }
     .nav-btn.active { color: var(--rot); }
@@ -1606,24 +1608,57 @@ function renderQuestion() {
         input.value = '';
         setTimeout(() => input.focus(), 100); 
 
-    } else if(q.type === 'sort') {
-        document.getElementById('zone-sort').style.display = 'block';
-        const list = document.getElementById('sort-list');
-        list.innerHTML = '';
-        // Mezclamos las opciones para que el usuario tenga que ordenarlas
-        [...q.options].sort(() => Math.random() - 0.5).forEach(opt => {
-            const item = document.createElement('div');
-            item.className = 'sort-item';
-            item.textContent = opt;
-            list.appendChild(item);
-        });
-        new Sortable(list, { 
-            animation: 150,
-            ghostClass: 'sortable-ghost'
-        });
-    }
-}
+    } else if (currentQuestion.type === 'sort') {
+    zoneSort.style.display = 'block';
+    const sortList = document.getElementById('sort-list');
+    sortList.innerHTML = '';
 
+    // Mezclamos las opciones para que no aparezcan ya ordenadas
+    const shuffled = [...currentQuestion.options].sort(() => Math.random() - 0.5);
+
+    shuffled.forEach(text => {
+        const item = document.createElement('div');
+        item.className = 'sort-item';
+        item.draggable = true; // <--- Esto permite el arrastre
+        item.innerText = text;
+
+        // --- EVENTOS DE MOUSE ---
+        item.addEventListener('dragstart', e => {
+            item.classList.add('dragging');
+        });
+
+        item.addEventListener('dragend', e => {
+            item.classList.remove('dragging');
+        });
+
+        sortList.appendChild(item);
+    });
+
+    // Lógica para calcular la nueva posición al arrastrar
+    sortList.addEventListener('dragover', e => {
+        e.preventDefault();
+        const afterElement = getDragAfterElement(sortList, e.clientY);
+        const dragging = document.querySelector('.dragging');
+        if (afterElement == null) {
+            sortList.appendChild(dragging);
+        } else {
+            sortList.insertBefore(dragging, afterElement);
+        }
+    });
+}
+function getDragAfterElement(container, y) {
+    const draggableElements = [...container.querySelectorAll('.sort-item:not(.dragging)')];
+
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
 function checkAnswer(val) {
     const q = questionQueue[currentQIndex];
     let isCorrect = false;
