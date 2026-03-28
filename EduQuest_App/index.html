@@ -1733,11 +1733,40 @@ function nextQuestion() {
       renderLevels();
     }
 
-    function goHome() { navTo('home'); }
-	window.onload = () => {
-      renderLevels();
-      navTo('home');
-    };
+    // 1. FUNCIÓN PARA VOLVER AL MAPA DE NIVELES
+function goHome() { 
+    // Si ya eligió perfil, vamos al mapa. Si no, al selector.
+    if (state.currentUser) {
+        navTo('home'); 
+    } else {
+        logout(); // Seguridad: si no hay usuario, mandamos al selector
+    }
+}
+
+// 2. LO QUE PASA APENAS SE ABRE LA APP
+window.onload = () => {
+    // Dibujamos los niveles en el fondo
+    renderLevels();
+    
+    // RESET DE PANTALLAS: Ocultamos todo para empezar de cero
+    document.querySelectorAll('.screen').forEach(s => {
+        s.classList.remove('active');
+        s.style.display = 'none';
+    });
+
+    // MOSTRAMOS EL SELECTOR DE PERFIL
+    const selector = document.getElementById('screen-profile-selector');
+    if (selector) {
+        selector.classList.add('active');
+        selector.style.display = 'block';
+    }
+
+    // OCULTAMOS LA BARRA DE NAVEGACIÓN (Solo aparece tras elegir nombre)
+    const mainNav = document.getElementById('main-nav');
+    if (mainNav) {
+        mainNav.style.display = 'none';
+    }
+};
 </script>
 </body>
 </html>
