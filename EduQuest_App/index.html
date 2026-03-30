@@ -193,12 +193,12 @@
     /* --- CONFIGURACIÓN Y ESTADO --- */
 
 let state = {
-    currentUser: '',
+    username: "",
+    fullName: "",
     currentLevel: 1,
-    completedLevels: [],
     coins: 0,
-	lastQuestionIndex: 0,
-	resumeLevel: 0
+    lastQuestionIndex: 0,
+    resumeLevel: 1
 };
 
 // Configuración de materias
@@ -212,44 +212,83 @@ const subjectMeta = {
 const subjectsOrder = ['matematica', 'lengua', 'sociales', 'naturales'];
 
 // Variables de control de flujo
+const subjectMeta = {
+    matematica: { label: "Matemática", icon: "🔢", colorClass: "c-mat", bgClass: "bg-mat" },
+    lengua: { label: "Lengua", icon: "📚", colorClass: "c-len", bgClass: "bg-len" },
+    sociales: { label: "Sociales", icon: "🗺️", colorClass: "c-soc", bgClass: "bg-soc" },
+    naturales: { label: "Naturales", icon: "🌿", colorClass: "c-nat", bgClass: "bg-nat" }
+};
+
+const subjectsOrder = ['matematica', 'lengua', 'sociales', 'naturales'];
+
+// Estado global de la aplicación
+let state = {
+    username: "",
+    fullName: "",
+    currentLevel: 1,
+    completedLevels: [], // Lo mantenemos para que renderLevels() funcione
+    coins: 0,
+    lastQuestionIndex: 0,
+    resumeLevel: 1
+};
+
 let currentIntroIndex = 0;
 let questionQueue = [];
 let currentQIndex = 0;
 
-    /* --- FUNCIONES DE BASE DE DATOS --- */
-    async function loadProgress() {
-      const { data, error } = await supabaseClient.from('user_progress').select('*').eq('id', 1).single();
-      if (data) {
-        state.coins = data.coins || 0;
-        state.completedLevels = data.completed_levels || [];
-        document.getElementById('coins-display').textContent = state.coins;
-        document.getElementById('stat-coins').textContent = state.coins;
-        renderLevels();
-      }
-    }
-    async function saveProgress() {
-      await supabaseClient.from('user_progress').update({ 
-        coins: state.coins, 
-        completed_levels: state.completedLevels,
-		last_question: state.lastQuestionIndex,
-        resume_level: state.resumeLevel,
-        updated_at: new Date() 
-      }).eq('id', 1);
-    }
-    async function selectProfile(name) {
-    state.currentUser = name; // Guardamos quién juega
-    
-    // 1. Mostramos la barra de navegación (ahora que ya entró)
-    const mainNav = document.querySelector('.bottom-nav');
-    if (mainNav) mainNav.style.display = 'flex';
+/* --- 2. EL "GUARDIÁN" Y GESTIÓN DE USUARIO --- */
+function validarUsuario(user) {
+    return user.length >= 8 && /[A-Z]/.test(user) && /[a-z]/.test(user) && /[0-9]/.test(user);
+}
 
-    // 2. Cargamos los puntos de la base de datos
-    await loadProgress();
-    
-    // 3. ¡Vamos al mapa de niveles!
+function crearPerfil() {
+    const nameInput = document.getElementById('reg-fullname');
+    const userInput = document.getElementById('reg-username');
+    const errorMsg = document.getElementById('login-error');
+
+    const name = nameInput.value.trim();
+    const user = userInput.value.trim();
+
+    if (name === "" || user === "") {
+        mostrarErrorLogin("Completa ambos campos.");
+        return;
+    }
+
+    if (!validarUsuario(user)) {
+        mostrarErrorLogin("El usuario requiere 8+ caracteres, Mayúscula, Minúscula y Número.");
+        return;
+    }
+
+    // Cargar o Crear
+    const savedData = localStorage.getItem('eduAiti_' + user);
+    if (savedData) {
+        state = JSON.parse(savedData);
+    } else {
+        state.username = user;
+        state.fullName = name;
+        state.coins = 0;
+        state.completedLevels = [];
+        saveProgress();
+    }
+
+    // Actualizar UI y entrar
+    document.getElementById('coins-display').textContent = state.coins;
     navTo('home');
-    
-    console.log("Sesión iniciada como:", name);
+    renderLevels();
+}
+
+function mostrarErrorLogin(mensaje) {
+    const errorMsg = document.getElementById('login-error');
+    if (errorMsg) {
+        errorMsg.textContent = mensaje;
+        errorMsg.style.display = "block";
+    }
+}
+
+function saveProgress() {
+    if (state.username) {
+        localStorage.setItem('eduAiti_' + state.username, JSON.stringify(state));
+    }
 }
     /* --- CONTENIDO EDUCATIVO (NAP) --- */
 const napContent = {
@@ -1524,45 +1563,54 @@ nivel31: {
 };
     /* --- LÓGICA DE NAVEGACIÓN Y JUEGO --- */
     /* --- REEMPLAZO TOTAL DE LÓGICA --- */
- function navTo(screenId) {
-    // 1. Quitamos la marca de "estamos jugando" siempre al cambiar
-    document.body.classList.remove('in-game');
 
-    // 2. Ocultamos todas las pantallas
+    // 1. ESTADO INICIAL (Asegúrate de que incluya los nuevos campos)
+function navTo(screenId) {
+    document.body.classList.remove('in-game');
     document.querySelectorAll('.screen').forEach(s => {
         s.classList.remove('active');
         s.style.display = 'none';
     });
 
-    // 3. Si entramos al juego o a la intro, OCULTAMOS la barra inferior
-    // Usamos 'in-game' que es la clase que pusimos en el CSS
     if (screenId === 'game' || screenId === 'intro') {
         document.body.classList.add('in-game');
     }
 
     const target = document.getElementById('screen-' + screenId);
     if (target) {
-        // Si es el selector de perfil usamos flex, si no block
-        target.style.display = (screenId === 'profile-selector') ? 'flex' : 'block';
+        target.style.display = (screenId === 'profile-selector' || screenId === 'login') ? 'flex' : 'block';
         setTimeout(() => target.classList.add('active'), 10);
     }
 
-    // 4. Actualizar botones de navegación (solo si no estamos jugando)
+    // Control de la barra de navegación
     const mainNav = document.querySelector('.bottom-nav');
     if (mainNav) {
-        // Solo mostramos la nav si NO estamos en juego, intro o login
-        if (screenId !== 'game' && screenId !== 'intro' && screenId !== 'profile-selector') {
-            mainNav.style.display = 'flex';
-        } else {
-            mainNav.style.display = 'none';
-        }
+        const hideNav = ['game', 'intro', 'profile-selector', 'login'].includes(screenId);
+        mainNav.style.display = hideNav ? 'none' : 'flex';
     }
 
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    if(screenId === 'home') document.querySelector('.nav-btn:nth-child(1)')?.classList.add('active');
-    if(screenId === 'profile') document.querySelector('.nav-btn:nth-child(2)')?.classList.add('active');
+    if (screenId === 'profile') updateProfileScreen();
 }
-	function renderLevels() {
+
+function updateProfileScreen() {
+    const profileZone = document.getElementById('screen-profile');
+    if (!profileZone) return;
+    profileZone.innerHTML = `
+        <div class="profile-card">
+            <div class="avatar-circle">⭐</div>
+            <h2>${state.fullName}</h2>
+            <p>@${state.username}</p>
+            <div class="stats-grid">
+                <div class="stat-item"><strong>${state.coins}</strong><span>Monedas</span></div>
+                <div class="stat-item"><strong>${state.completedLevels.length}</strong><span>Niveles</span></div>
+            </div>
+            <button class="logout-btn" onclick="location.reload()">Cerrar Sesión</button>
+        </div>
+    `;
+}
+
+/* --- 4. LÓGICA DEL JUEGO --- */
+function renderLevels() {
     const grid = document.getElementById('levels-grid');
     if(!grid) return;
     grid.innerHTML = '';
@@ -1593,16 +1641,12 @@ function renderIntroStep() {
     const info = (napContent[levelNum] && napContent[levelNum][subjectKey]) || { txt: "¡A repasar!" };
 
     document.getElementById('intro-badge').textContent = `Misión ${levelNum} • Paso ${currentIntroIndex + 1} de 4`;
-    document.getElementById('intro-title').textContent = `Repasamos ${m.label}`;
-
     const list = document.getElementById('intro-subjects');
     list.innerHTML = `
-        <div style="text-align: center; padding: 20px 10px; animation: fadeIn 0.4s ease;">
-            <div style="font-size: 4rem; margin-bottom: 15px;">${m.icon}</div>
-            <h2 class="${m.colorClass}" style="font-family: 'Fredoka One'; margin-bottom: 15px;">${m.label}</h2>
-            <p style="font-size: 1.1rem; line-height: 1.6; color: var(--white); background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1);">
-                ${info.txt}
-            </p>
+        <div style="text-align: center; padding: 20px;">
+            <div style="font-size: 4rem;">${m.icon}</div>
+            <h2 class="${m.colorClass}">${m.label}</h2>
+            <p class="intro-text-box">${info.txt}</p>
         </div>
     `;
 
@@ -1625,72 +1669,45 @@ function startLevel() {
         questionQueue = [...data.examen_final.map(q => ({...q, subject: 'examen_final'}))];
     } else {
         subjectsOrder.forEach(sub => {
-            if(data[sub]) {
-                questionQueue.push(...data[sub].map(q => ({...q, subject: sub})));
-            }
+            if(data[sub]) questionQueue.push(...data[sub].map(q => ({...q, subject: sub})));
         });
     }
 
-    if (questionQueue.length === 0) return;
-    if (state.resumeLevel === state.currentLevel) {
-        currentQIndex = state.lastQuestionIndex || 0;
-    } else {
-        currentQIndex = 0;
-        state.resumeLevel = state.currentLevel; // Marcamos qué nivel estamos jugando
-    }
+    currentQIndex = (state.resumeLevel === state.currentLevel) ? (state.lastQuestionIndex || 0) : 0;
+    state.resumeLevel = state.currentLevel;
+    
     navTo('game');
     renderQuestion();
 }
 
-
-function getDragAfterElement(container, y) {
-    const draggableElements = [...container.querySelectorAll('.sort-item:not(.dragging)')];
-    return draggableElements.reduce((closest, child) => {
-        const box = child.getBoundingClientRect();
-        const offset = y - box.top - box.height / 2;
-        if (offset < 0 && offset > closest.offset) {
-            return { offset: offset, element: child };
-        } else {
-            return closest;
-        }
-    }, { offset: Number.NEGATIVE_INFINITY }).element;
-}
-
 function renderQuestion() {
-    // 1. Limpieza total de estados previos
-    document.querySelectorAll('button').forEach(b => b.disabled = false);
-    const fb = document.getElementById('feedback-panel');
-    const nextBtn = document.getElementById('next-btn');
-    fb.style.display = 'none';
-    nextBtn.style.display = 'none'; // Aseguramos que empiece oculto
+    const q = questionQueue[currentQIndex];
     state.lastQuestionIndex = currentQIndex;
     saveProgress();
-    const q = questionQueue[currentQIndex];
 
-    // 2. Actualizar textos y progreso
-    document.getElementById('progress-label').textContent = `Pregunta ${currentQIndex + 1} de ${questionQueue.length}`;
+    // Feedback reset
+    document.getElementById('feedback-panel').style.display = 'none';
+    document.getElementById('next-btn').style.display = 'none';
+    document.querySelectorAll('.option-btn').forEach(b => b.disabled = false);
+
+    // Progress bar
     const pct = Math.round((currentQIndex / questionQueue.length) * 100);
     document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('q-text').textContent = q.question;
 
-    // 3. Reset de zonas
-    ['zone-mc', 'zone-tf', 'zone-fitb', 'zone-sort'].forEach(z => {
-        const el = document.getElementById(z);
-        if(el) el.style.display = 'none';
-    });
+    // Subject Pill
+    const pill = document.getElementById('subject-pill');
+    if (q.subject && subjectMeta[q.subject]) {
+        const meta = subjectMeta[q.subject];
+        pill.textContent = meta.label;
+        pill.className = `subject-pill ${meta.bgClass} ${meta.colorClass}`;
+        pill.style.display = 'inline-block';
+    } else { pill.style.display = 'none'; }
 
-    document.getElementById('q-text').textContent = q.question || q.q;
-	const pill = document.getElementById('subject-pill');
-if (q.subject && subjectMeta[q.subject]) {
-    const meta = subjectMeta[q.subject];
-    pill.textContent = meta.label;
-    pill.className = `subject-pill ${meta.bgClass} ${meta.colorClass}`;
-    pill.style.display = 'inline-block';
-} else {
-    pill.style.display = 'none';
-}
+    // Zones Reset
+    ['zone-mc', 'zone-tf', 'zone-fitb', 'zone-sort'].forEach(z => document.getElementById(z).style.display = 'none');
 
-    // 4. Lógica por tipo (Sin activar el cursor automáticamente)
-    if(q.type === 'multiple-choice' || q.type === 'intruder' || q.type === 'sequence') {
+    if(q.type === 'multiple-choice') {
         const zone = document.getElementById('zone-mc');
         zone.style.display = 'flex';
         zone.innerHTML = '';
@@ -1698,129 +1715,68 @@ if (q.subject && subjectMeta[q.subject]) {
             const btn = document.createElement('button');
             btn.className = 'option-btn';
             btn.textContent = opt;
-            btn.onclick = (e) => {
-                // Iluminar el botón clickeado
-                e.target.style.background = 'var(--rot)';
-                checkAnswer(opt);
-            };
+            btn.onclick = () => checkAnswer(opt);
             zone.appendChild(btn);
         });
     } else if(q.type === 'true-false') {
         document.getElementById('zone-tf').style.display = 'grid';
-    } else if(q.type === 'fill-in-the-blank' || q.type === 'fast') {
+    } else if(q.type === 'fill-in-the-blank') {
         document.getElementById('zone-fitb').style.display = 'block';
-        const input = document.getElementById('fitb-input');
-        input.value = '';
-        // SOLO damos foco si es realmente necesario para evitar el cursor molesto
+        document.getElementById('fitb-input').value = '';
     } else if (q.type === 'sort') {
-        const zoneSort = document.getElementById('zone-sort');
-        zoneSort.style.display = 'block';
-        const sortList = document.getElementById('sort-list');
-		const oldInstance = Sortable.get(sortList);
-        if (oldInstance) oldInstance.destroy();
-        sortList.innerHTML = '';
-
-        // Mezclamos las opciones
-        const shuffled = [...q.options].sort(() => Math.random() - 0.5);
-        
-        shuffled.forEach(text => {
-            const item = document.createElement('div');
-            item.className = 'sort-item';
-            item.innerText = text;
-            sortList.appendChild(item);
-        });
-
-        // --- EL CAMBIO CLAVE ESTÁ AQUÍ ---
-        // Esto "despierta" el movimiento táctil cada vez que sale una pregunta nueva
-        new Sortable(sortList, {
-            animation: 150,
-            ghostClass: 'dragging', // Esta es la clase que hace que brille al moverlo
-            forceFallback: true,
-			fallbackTolerance: 3,
-            onStart: function() {
-                // Opcional: vibración corta al tocar (solo Android)
-                if (navigator.vibrate) navigator.vibrate(10);
-            }
-        });
+        renderSortZone(q);
     }
-}	  
+}
+
+function renderSortZone(q) {
+    const sortList = document.getElementById('sort-list');
+    document.getElementById('zone-sort').style.display = 'block';
+    sortList.innerHTML = '';
+    const shuffled = [...q.options].sort(() => Math.random() - 0.5);
+    shuffled.forEach(text => {
+        const item = document.createElement('div');
+        item.className = 'sort-item';
+        item.innerText = text;
+        sortList.appendChild(item);
+    });
+    new Sortable(sortList, { animation: 150, ghostClass: 'dragging', forceFallback: true });
+}
+
 function checkAnswer(val) {
     const q = questionQueue[currentQIndex];
-    let isCorrect = false;
-
-    // 1. FUNCIÓN INTERNA DE NORMALIZACIÓN (El "Traductor")
-    const normalizar = (texto) => {
-        let t = String(texto).toLowerCase().trim();
-        if (t === 'true') return 'verdadero';
-        if (t === 'false') return 'falso';
-        return t;
+    const normalizar = (t) => {
+        let res = String(t).toLowerCase().trim();
+        if (res === 'true') return 'verdadero';
+        if (res === 'false') return 'falso';
+        return res;
     };
 
-    // 2. LÓGICA DE COMPARACIÓN
-    if (Array.isArray(q.answer)) {
-        // Para el juego de ordenar (Sort)
-        const valNormalizado = Array.isArray(val) 
-            ? val.map(v => normalizar(v)) 
-            : [normalizar(val)];
-        const ansNormalizado = q.answer.map(v => normalizar(v));
-        isCorrect = JSON.stringify(valNormalizado) === JSON.stringify(ansNormalizado);
+    let isCorrect = false;
+    if (q.type === 'sort') {
+        const items = Array.from(document.querySelectorAll('.sort-item')).map(i => normalizar(i.textContent));
+        const answers = q.answer.map(a => normalizar(a));
+        isCorrect = JSON.stringify(items) === JSON.stringify(answers);
     } else {
-        // Para Multiple Choice, True/False y Fill-in-the-blank
         isCorrect = normalizar(val) === normalizar(q.answer);
     }
 
     const fb = document.getElementById('feedback-panel');
-    const nextBtn = document.getElementById('next-btn');
-
     fb.style.display = 'block';
-
-    // 3. RESULTADO Y PREMIOS
     if (isCorrect) {
         fb.style.background = 'rgba(76,217,123,0.2)';
-        fb.style.color = 'var(--nat)';
         fb.textContent = '¡Excelente! 🌟 +10 monedas';
-        
         state.coins += 10;
-        
-        // Actualizar displays de monedas
-        const coinsDisplay = document.getElementById('coins-display');
-        if(coinsDisplay) coinsDisplay.textContent = state.coins;
-        
-        const statCoins = document.getElementById('stat-coins');
-        if(statCoins) statCoins.textContent = state.coins;
-        
-        if(typeof saveProgress === 'function') saveProgress(); 
+        saveProgress();
     } else {
         fb.style.background = 'rgba(255,107,53,0.2)';
-        fb.style.color = 'var(--mat)';
-        
-        // Mostramos la respuesta tal cual está escrita originalmente para que se entienda
-        const respuestaVisible = Array.isArray(q.answer) ? q.answer.join(' → ') : q.answer;
-        fb.textContent = '¡Casi! La respuesta era: ' + respuestaVisible;
+        fb.textContent = '¡Casi! Era: ' + (Array.isArray(q.answer) ? q.answer.join(' → ') : q.answer);
     }
 
-    // 4. FLUJO DE NAVEGACIÓN
-    if (nextBtn) nextBtn.style.display = 'block';
-    
-    // 5. BLOQUEO DE INTERACCIÓN (Evita el símbolo de prohibido molesto)
-    const selectors = '.option-btn, .sort-item, #btn-true, #btn-false, #btn-fitb, #btn-sort, .true-false-btn';
-    document.querySelectorAll(selectors).forEach(b => {
+    document.getElementById('next-btn').style.display = 'block';
+    document.querySelectorAll('.option-btn, .sort-item, .true-false-btn').forEach(b => {
         b.disabled = true;
-        b.style.opacity = "0.7";
-        b.style.cursor = "default"; // Cambiado de "not-allowed" a "default"
+        b.style.cursor = "default";
     });
-}
-function answerTF(val) { checkAnswer(val); }
-
-function submitFITB() { 
-    const input = document.getElementById('fitb-input');
-    const val = input.value.trim();
-    if(val !== "") checkAnswer(val); 
-}
-
-function submitSort() {
-    const items = Array.from(document.querySelectorAll('.sort-item')).map(i => i.textContent.trim());
-    checkAnswer(items); // Pasamos el array completo para que lo compare checkAnswer
 }
 
 function nextQuestion() {
@@ -1835,47 +1791,14 @@ function finishLevel() {
         saveProgress(); 
     }
     navTo('results');
-    document.getElementById('result-title').textContent = '¡NIVEL ' + state.currentLevel + ' COMPLETADO!';
+    document.getElementById('result-title').textContent = '¡NIVEL COMPLETADO!';
     document.getElementById('result-score').textContent = '🪙 ' + state.coins;
-    document.getElementById('result-sub').textContent = `¡Sos una verdadera experta, ${state.currentUser || 'Aitana'}!`;
     renderLevels();
 }
 
-function goHome() { navTo('home'); }
-
-// --- LÓGICA DE LOGIN Y ARRANQUE ---
-
-async function loginExplorador() {
-    const input = document.getElementById('player-name-input');
-    const name = input.value.trim();
-    if (name.length < 2) {
-        alert("¡Escribí tu nombre de exploradora!");
-        return;
-    }
-    state.currentUser = name;
-    const heroTitle = document.querySelector('#screen-home .hero-title');
-    if(heroTitle) heroTitle.innerHTML = `¡Hola,<br/>${name}! 🚀`;
-    // MOSTRAR NAV DE ABAJO
-    const mainNav = document.querySelector('.bottom-nav');
-    if (mainNav) mainNav.style.display = 'flex';
-
-    await loadProgress();
-    navTo('home');
-}
-
+/* --- 5. INICIO AL CARGAR --- */
 window.onload = () => {
-    renderLevels();
-    // Ocultar todo al inicio
-    document.querySelectorAll('.screen').forEach(s => {
-        s.classList.remove('active');
-        s.style.display = 'none';
-    });
-    // Esconder navegación
-    const mainNav = document.querySelector('.bottom-nav');
-    if (mainNav) mainNav.style.display = 'none';
-
-    // Mostrar login
-    navTo('profile-selector');
+    navTo('login'); // Cambiamos a la pantalla de login con inputs
 };
     
   </script>
