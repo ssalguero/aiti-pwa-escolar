@@ -78,7 +78,7 @@
     .option-btn:active, .option-btn:focus { background: var(--rot) !important; box-shadow: 0 0 15px var(--rot); border-color: white !important; transform: scale(0.95); }
     .sort-item { background: var(--card2); border: 2px solid var(--rot); border-radius: 12px; padding: 14px; margin-bottom: 8px; font-family: 'Fredoka One'; cursor: grab; }
 
-	.sort-item.dragging { opacity: 1 !important; background: var(--rot) !important; border: 2px solid white !important; box-shadow: 0 8px 25px rgba(0,0,0,0.5); }
+	.sort-item.dragging { opacity: 0.9 !important; background: var(--rot) !important; border: 2px solid white !important; transform: scale(1.05); box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
 	  
     .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: rgba(15,10,42,0.95); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid var(--card2); z-index: 100; }    
 	 body.in-game .bottom-nav { display: none !important; }
@@ -188,7 +188,9 @@ let state = {
     currentUser: '',
     currentLevel: 1,
     completedLevels: [],
-    coins: 0
+    coins: 0,
+	lastQuestionIndex: 0,
+	resumeLevel: 0
 };
 
 // Configuración de materias
@@ -204,7 +206,7 @@ const subjectsOrder = ['matematica', 'lengua', 'sociales', 'naturales'];
 // Variables de control de flujo
 let currentIntroIndex = 0;
 let questionQueue = [];
-let currentQIndex = 0;0;
+let currentQIndex = 0;
 
     /* --- FUNCIONES DE BASE DE DATOS --- */
     async function loadProgress() {
@@ -221,6 +223,8 @@ let currentQIndex = 0;0;
       await supabaseClient.from('user_progress').update({ 
         coins: state.coins, 
         completed_levels: state.completedLevels,
+		last_question: state.lastQuestionIndex,
+        resume_level: state.resumeLevel,
         updated_at: new Date() 
       }).eq('id', 1);
     }
@@ -1602,7 +1606,12 @@ function startLevel() {
     }
 
     if (questionQueue.length === 0) return;
-    currentQIndex = 0;
+    if (state.resumeLevel === state.currentLevel) {
+        currentQIndex = state.lastQuestionIndex || 0;
+    } else {
+        currentQIndex = 0;
+        state.resumeLevel = state.currentLevel; // Marcamos qué nivel estamos jugando
+    }
     navTo('game');
     renderQuestion();
 }
@@ -1628,7 +1637,8 @@ function renderQuestion() {
     const nextBtn = document.getElementById('next-btn');
     fb.style.display = 'none';
     nextBtn.style.display = 'none'; // Aseguramos que empiece oculto
-
+    state.lastQuestionIndex = currentQIndex;
+    saveProgress();
     const q = questionQueue[currentQIndex];
 
     // 2. Actualizar textos y progreso
@@ -1681,19 +1691,28 @@ if (q.subject && subjectMeta[q.subject]) {
         zoneSort.style.display = 'block';
         const sortList = document.getElementById('sort-list');
         sortList.innerHTML = '';
+
+        // Mezclamos las opciones
         const shuffled = [...q.options].sort(() => Math.random() - 0.5);
+        
         shuffled.forEach(text => {
             const item = document.createElement('div');
             item.className = 'sort-item';
-            item.draggable = true;
             item.innerText = text;
-            item.addEventListener('dragstart', () => item.classList.add('dragging'));
-            item.addEventListener('dragend', () => item.classList.remove('dragging'));
+            // No hace falta agregar los eventos de 'dragging' a mano, Sortable lo hace solo
             sortList.appendChild(item);
-			});
-		    new Sortable(sortList, { 
-            animation: 150, 
-            ghostClass: 'dragging' 
+        });
+
+        // --- EL CAMBIO CLAVE ESTÁ AQUÍ ---
+        // Esto "despierta" el movimiento táctil cada vez que sale una pregunta nueva
+        new Sortable(sortList, {
+            animation: 150,
+            ghostClass: 'dragging', // Esta es la clase que hace que brille al moverlo
+            forceFallback: true,    // Esto ayuda mucho en celulares viejos
+            onStart: function() {
+                // Opcional: vibración corta al tocar (solo Android)
+                if (navigator.vibrate) navigator.vibrate(10);
+            }
         });
     }
 }	  
