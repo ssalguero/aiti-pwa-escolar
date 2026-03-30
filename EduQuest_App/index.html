@@ -1698,6 +1698,8 @@ if (q.subject && subjectMeta[q.subject]) {
         const zoneSort = document.getElementById('zone-sort');
         zoneSort.style.display = 'block';
         const sortList = document.getElementById('sort-list');
+		const oldInstance = Sortable.get(sortList);
+        if (oldInstance) oldInstance.destroy();
         sortList.innerHTML = '';
 
         // Mezclamos las opciones
@@ -1707,7 +1709,6 @@ if (q.subject && subjectMeta[q.subject]) {
             const item = document.createElement('div');
             item.className = 'sort-item';
             item.innerText = text;
-            // No hace falta agregar los eventos de 'dragging' a mano, Sortable lo hace solo
             sortList.appendChild(item);
         });
 
@@ -1716,7 +1717,8 @@ if (q.subject && subjectMeta[q.subject]) {
         new Sortable(sortList, {
             animation: 150,
             ghostClass: 'dragging', // Esta es la clase que hace que brille al moverlo
-            forceFallback: true,    // Esto ayuda mucho en celulares viejos
+            forceFallback: true,
+			fallbackTolerance: 3,
             onStart: function() {
                 // Opcional: vibración corta al tocar (solo Android)
                 if (navigator.vibrate) navigator.vibrate(10);
