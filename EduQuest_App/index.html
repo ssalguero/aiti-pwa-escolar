@@ -1767,7 +1767,7 @@ function checkAnswer(val) {
     document.querySelectorAll('.option-btn, #btn-true, #btn-false, #btn-fitb, #btn-sort').forEach(b => {
         b.disabled = true;
         b.style.opacity = "0.7";
-        b.style.cursor = "not-allowed";
+        b.style.cursor = "default";
     });
 }
 function answerTF(val) { checkAnswer(val); }
