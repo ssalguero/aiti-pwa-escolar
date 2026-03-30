@@ -442,7 +442,7 @@ const napContent = {
     isExam: true,
     matematica: { txt: "¡Mitad de camino! Repasamos multiplicaciones por una cifra, el valor de los números y problemas de billetes." },
     lengua: { txt: "Demostrá lo que sabés sobre sustantivos propios, el uso de mayúsculas y los cuentos maravillosos." },
-    sociales: { txt: "Volvemos a visitar a las autoridades locales y los puntos cardinales en el mapa de nuestra provincia." },
+    sociales: { txt: "Volvemos a visitar a las autoridades locales y los puntos cardinales en el mapa de nuestra provincia. Vemos quienes eran los pueblos originarios, que paso en la colonizcion y la vida colonial" },
     naturales: { txt: "Recordamos las partes de las plantas, sus funciones y cómo se clasifican los animales según su esqueleto." }
 },
 21: {
@@ -848,10 +848,19 @@ nivel3: {
       { id: "ex10_m1", subject: "matematica", type: "multiple-choice", question: "Si tengo 1/4 de chocolate y me regalan otro 1/4, ¿cuánto tengo?", options: ["1 entero", "1/2 (la mitad)", "1/8"], answer: "1/2 (la mitad)" },
       { id: "ex10_m2", subject: "matematica", type: "true-false", question: "En el número 15.200, el 5 ocupa el lugar de las unidades de mil.", answer: "true" },
       { id: "ex10_m3", subject: "matematica", type: "fill-in-the-blank", question: "¿Cuánto es 6 x 4?", answer: "24" },
-      { id: "ex10_l1", subject: "lengua", type: "multiple-choice", question: "¿Cuál es ESDRÚJULA?", options: ["Corazón", "Árbol", "Música"], answer: "Música" },
-      { id: "ex10_s1", subject: "sociales", type: "multiple-choice", question: "¿Cuántas provincias tiene la Argentina?", options: ["20", "23", "24"], answer: "23" },
-      { id: "ex10_n3", subject: "naturales", type: "sort", question: "ORDENÁ el ciclo de la vida:", options: ["nacer", "crecer", "reproducirse", "morir"], answer: ["nacer", "crecer", "reproducirse", "morir"] },
-      { id: "ex10_n4", subject: "naturales", type: "fill-in-the-blank", question: "¿Cómo se llaman los animales que NO tienen huesos?", answer: "invertebrados" }
+	  { id: "ex10_m4", subject: "matematica", type: "sort", question: "Ordená de MENOR a MAYOR:", options: ["1.205", "1.025", "1.502", "1.250"], answer: ["1.025", "1.205", "1.250", "1.502"] },
+      { id: "ex10_l1", subject: "lengua", type: "true-false", question: "¿Las palabras 'rápido' y 'veloz' son antónimos?", answer: "false" },
+	  { id: "ex10_l2", subject: "lengua", type: "multiple-choice", question: "¿Cuál es ESDRÚJULA?", options: ["Corazón", "Árbol", "Música"], answer: "Música" },
+      { id: "ex10_l3", subject: "lengua", type: "fill-in-the-blank", question: "Las palabras que indican una acción se llaman ___.", answer: "verbos" },
+	  { id: "ex10_l4", subject: "lengua", type: "sort", question: "Ordená alfabéticamente:", options: ["Zorro", "Árbol", "Casa", "Barco"], answer: ["Árbol", "Barco", "Casa", "Zorro"] },
+	  { id: "ex20_s1", subject: "sociales", type: "sort", question: "Ubicá las provincias de NORTE a SUR:", options: ["Jujuy", "Chubut", "Córdoba", "Tierra del Fuego"], answer: ["Jujuy", "Córdoba", "Chubut", "Tierra del Fuego"] },
+	  { id: "ex20_s2", subject: "sociales", type: "true-false", question: "La máxima autoridad de una Provincia es el Gobernador.", answer: "Verdadero" },
+      { id: "ex20_s3", subject: "sociales", subject: "sociales", type: "fill-in-the-blank", question: "El continente donde vivimos se llama ___.", answer: "América" },
+	  { id: "ex20_s4", subject: "sociales", type: "fill-in-the-blank", question: "En el sur de Argentina el clima suele ser bastante ___________.", answer: "caluroso" }
+      { id: "ex10_n1", subject: "naturales", type: "multiple-choice", question: "¿Cuál de estos es un animal vertebrado?", options: ["Lombriz", "Mariposa", "Caballo", "Araña"], answer: "Caballo" },
+	  { id: "ex10_n2", subject: "naturales", type: "true-false", question: "¿Las plantas NO necesitan luz solar para realizar la fotosíntesis?", answer: "false" },
+	  { id: "ex10_n3", subject: "naturales", type: "sort", question: "ORDENÁ el ciclo de la vida:", options: ["nacer", "crecer", "reproducirse", "morir"], answer: ["nacer", "crecer", "reproducirse", "morir"] },
+      { id: "ex10_n4", subject: "naturales", type: "multiple-choice", question: "¿Qué estado del agua es el hielo?", options: ["Líquido", "Gaseoso", "Sólido", "Plasma"], answer: "Sólido" }
 	]
 }, 
 nivel11: {
@@ -1054,14 +1063,23 @@ nivel13: {
   },
   nivel20: {
     exámen2: [
-      { id: "ex20_m1", subject: "matematica", type: "multiple-choice", question: "3 billetes de $100 y 8 de $10, ¿cuánto es?", options: ["$308", "$380", "$830"], answer: "$380" },
-      { id: "ex20_m2", subject: "matematica", type: "true-false", question: "En el 4.560, el 5 vale 500 (centenas).", answer: "true" },
+      { id: "ex20_m1", subject: "matematica",  question: "3 billetes de $100 y 8 de $10, ¿cuánto es?", options: ["$308", "$380", "$830"], answer: "$380" },
+      { id: "ex20_m2", subject: "matematica", type: "true-false", question: "En el 4.560, el 5 vale 500 (o 5 centenas).", answer: "true" },
       { id: "ex20_m3", subject: "matematica", type: "fill-in-the-blank", question: "¿Cuánto es 8 x 3?", answer: "24" },
-      { id: "ex20_l1", subject: "lengua", type: "multiple-choice", question: "¿Cuál NO es un sustantivo común?", options: ["Perro", "Mesa", "Aitana", "Libro"], answer: "Aitana" },
-      { id: "ex20_s1", subject: "sociales", type: "multiple-choice", question: "¿Por dónde se oculta el Sol?", options: ["Norte", "Oeste", "Este"], answer: "Oeste" },
-      { id: "ex20_n1", subject: "naturales", type: "multiple-choice", question: "¿Qué parte de la planta fabrica las semillas?", options: ["Raíz", "Flor", "Tallo"], answer: "Flor" },
-      { id: "ex20_n4", subject: "naturales", type: "fill-in-the-blank", question: "¿Cómo se llama el material que se rompe fácil (vidrio)?", answer: "frágil" }
-    ]
+      { id: "ex20_m4", subject: "matematica", type: "true-false", question: "Un medio (1/2) es una parte más pequeña que un medio (1/4).", answer: "false" },
+	  { id: "ex20_l1", subject: "lengua", type: "multiple-choice", question: "¿Cuál NO es un sustantivo común?", options: ["Perro", "Mesa", "Aitana", "Libro"], answer: "Aitana" },
+      { id: "ex20_l2", subject: "lengua", type: "true-false", question: "Un párrafo empieza y termina con un 'punto y aparte' explican una idea.", answer: "true" },
+	  { id: "ex20_l3", subject: "lengua", type: "true-false", question: "El sinónimo de 'triste' es 'feliz'.", answer: "false" },
+	  { id: "ex20_l4", subject: "lengua", type: "multiple-choice", question: "¿Cuál es el antónimo de 'valiente'?", options: ["fuerte", "cobarde", "héroe", "osado"], answer: "cobarde" },
+	  { id: "ex20_s1", subject: "sociales", type: "multiple-choice", "¿En qué fecha se celebra la Revolución de Mayo?", options: ["9 de Julio", "25 de Mayo", "20 de Junio", "17 de Agosto"], answer: "25 de Mayo" },
+	  { id: "ex20_s2", subject: "sociales", type: "true-false", question: "¿San Martín cruzó la Cordillera de los Andes para liberar a Chile y Perú?", answer: "true" },
+      { id: "ex20_s3", subject: "sociales", type: "fill-in-the-blank", question: "La máxima ley de nuestro país se llama la ___ Nacional.", answer: "Constitución" },
+	  { id: "ex20_s4", subject: "sociales", type: "true-false", question: "La autoridad máxima de un municipio es el gobernador", answer: "false" },
+      { id: "ex20_n1", subject: "naturales",type: "multiple-choice", question: "¿Qué sistema se encarga de llevar el oxígeno a todo el cuerpo?", options: ["Digestivo", "Circulatorio", "Excretor", "Óseo"], answer: "Circulatorio" },
+      { id: "ex20_n2", subject: "naturales", type: "true-false", question: "¿La luna es el centro de nuestro Sistema Solar?", answer: "false" },
+      { id: "ex20_n3", subject: "naturales", type: "multiple-choice", question: "¿Qué tipo de animal es el Pingüino?", options: ["Pez", "Mamífero", "Ave", "Anfibio"], answer: "Ave" },
+	  { id: "ex20_n4", subject: "naturales", type: "fill-in-the-blank", question: "Los organos que filtran la sangre son los ___", answer: "Riñones" },	
+	]
   }, 
 nivel21: {
     matematica: [
