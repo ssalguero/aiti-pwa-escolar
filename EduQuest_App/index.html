@@ -76,7 +76,15 @@
 
 /* Esta es la parte que hace que brille al tocarlo */
     .option-btn:active, .option-btn:focus { background: var(--rot) !important; box-shadow: 0 0 15px var(--rot); border-color: white !important; transform: scale(0.95); }
-    .sort-item { background: var(--card2); border: 2px solid var(--rot); border-radius: 12px; padding: 14px; margin-bottom: 8px; font-family: 'Fredoka One'; cursor: grab; }
+    .screen, .option-btn, .sort-item, .level-card { user-select: none; -webkit-user-select: none; touch-action: manipulation; }
+
+/* Asegura que los botones siempre muestren la "manito" si están activos */
+    .option-btn:not(:disabled), .level-card:not(.locked) { cursor: pointer !important; }
+
+/* Solo mostramos el cursor de "no permitido" cuando el botón está deshabilitado de verdad */
+     button:disabled {
+     cursor: not-allowed !important; }
+	.sort-item { background: var(--card2); border: 2px solid var(--rot); border-radius: 12px; padding: 14px; margin-bottom: 8px; font-family: 'Fredoka One'; cursor: grab; }
 
 	.sort-item.dragging { opacity: 0.9 !important; background: var(--rot) !important; border: 2px solid white !important; transform: scale(1.05); box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
 	  
