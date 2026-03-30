@@ -1748,27 +1748,44 @@ function checkAnswer(val) {
     const q = questionQueue[currentQIndex];
     let isCorrect = false;
 
-    // Normalización para comparar
+    // 1. FUNCIÓN INTERNA DE NORMALIZACIÓN (El "Traductor")
+    const normalizar = (texto) => {
+        let t = String(texto).toLowerCase().trim();
+        if (t === 'true') return 'verdadero';
+        if (t === 'false') return 'falso';
+        return t;
+    };
+
+    // 2. LÓGICA DE COMPARACIÓN
     if (Array.isArray(q.answer)) {
-        const valNormalizado = Array.isArray(val) ? val.map(v => String(v).toLowerCase().trim()) : [String(val).toLowerCase().trim()];
-        const ansNormalizado = q.answer.map(v => String(v).toLowerCase().trim());
+        // Para el juego de ordenar (Sort)
+        const valNormalizado = Array.isArray(val) 
+            ? val.map(v => normalizar(v)) 
+            : [normalizar(val)];
+        const ansNormalizado = q.answer.map(v => normalizar(v));
         isCorrect = JSON.stringify(valNormalizado) === JSON.stringify(ansNormalizado);
     } else {
-        isCorrect = String(val).toLowerCase().trim() === String(q.answer).toLowerCase().trim();
+        // Para Multiple Choice, True/False y Fill-in-the-blank
+        isCorrect = normalizar(val) === normalizar(q.answer);
     }
 
     const fb = document.getElementById('feedback-panel');
-    const nextBtn = document.getElementById('next-btn'); // Referencia al botón siguiente
+    const nextBtn = document.getElementById('next-btn');
 
     fb.style.display = 'block';
 
+    // 3. RESULTADO Y PREMIOS
     if (isCorrect) {
         fb.style.background = 'rgba(76,217,123,0.2)';
         fb.style.color = 'var(--nat)';
         fb.textContent = '¡Excelente! 🌟 +10 monedas';
+        
         state.coins += 10;
-        document.getElementById('coins-display').textContent = state.coins;
-        // Si tienes el elemento stat-coins en el perfil, actualízalo
+        
+        // Actualizar displays de monedas
+        const coinsDisplay = document.getElementById('coins-display');
+        if(coinsDisplay) coinsDisplay.textContent = state.coins;
+        
         const statCoins = document.getElementById('stat-coins');
         if(statCoins) statCoins.textContent = state.coins;
         
@@ -1776,18 +1793,21 @@ function checkAnswer(val) {
     } else {
         fb.style.background = 'rgba(255,107,53,0.2)';
         fb.style.color = 'var(--mat)';
-        const respuestaVisible = Array.isArray(q.answer) ? q.answer.join(', ') : q.answer;
+        
+        // Mostramos la respuesta tal cual está escrita originalmente para que se entienda
+        const respuestaVisible = Array.isArray(q.answer) ? q.answer.join(' → ') : q.answer;
         fb.textContent = '¡Casi! La respuesta era: ' + respuestaVisible;
     }
 
-    // MOSTRAR EL BOTÓN SIGUIENTE (Esto corrige tu problema)
-    nextBtn.style.display = 'block';
+    // 4. FLUJO DE NAVEGACIÓN
+    if (nextBtn) nextBtn.style.display = 'block';
     
-    // Desactivar todos los botones para que no pueda marcar otra opción
-    document.querySelectorAll('.option-btn, #btn-true, #btn-false, #btn-fitb, #btn-sort').forEach(b => {
+    // 5. BLOQUEO DE INTERACCIÓN (Evita el símbolo de prohibido molesto)
+    const selectors = '.option-btn, .sort-item, #btn-true, #btn-false, #btn-fitb, #btn-sort, .true-false-btn';
+    document.querySelectorAll(selectors).forEach(b => {
         b.disabled = true;
         b.style.opacity = "0.7";
-        b.style.cursor = "default";
+        b.style.cursor = "default"; // Cambiado de "not-allowed" a "default"
     });
 }
 function answerTF(val) { checkAnswer(val); }
