@@ -150,7 +150,9 @@
       </div>
       <div id="zone-sort" style="display:none;">
         <div id="sort-list" class="sort-container"></div>
-        <button id="btn-sort" onclick="submitSort()" style="width:100%; padding:15px; border-radius:10px; border:none; background:var(--rot); color:white; font-weight:800; margin-top:10px;">REVISAR ORDEN</button>
+        <button id="btn-sort" onclick="submitSort()" 
+		style="width:100%; padding:15px; border-radius:10px; border:none; background:var(--rot); color:white; font-weight:800; margin-top:10px;">
+		</button>
       </div>
       <div id="feedback-panel" style="display:none; margin-top:15px; padding:15px; border-radius:10px; text-align:center; font-weight:800;"></div>
       <button id="next-btn" style="display:none; width:100%; margin-top:15px; padding:15px; border-radius:10px; border:none; background: var(--nat) !important; color: var(--bg) !important; 
@@ -1762,6 +1764,22 @@ function renderQuestion() {
     }
 }
 
+function submitSort() {
+    // 1. Obtenemos los textos de los items en el orden que los dejó el usuario
+    const items = Array.from(document.querySelectorAll('.sort-item'))
+                       .map(i => i.textContent.trim());
+    
+    // 2. Se los enviamos a checkAnswer para que los valide
+    if (items.length > 0) {
+        checkAnswer(items);
+    }
+}
+
+function answerTF(val) { 
+    // Esta función sirve de puente para los botones de Verdadero/Falso
+    checkAnswer(val); 
+}
+
 function renderSortZone(q) {
     const sortList = document.getElementById('sort-list');
     document.getElementById('zone-sort').style.display = 'block';
@@ -1787,10 +1805,15 @@ function checkAnswer(val) {
 
     let isCorrect = false;
     if (q.type === 'sort') {
-        const items = Array.from(document.querySelectorAll('.sort-item')).map(i => normalizar(i.textContent));
-        const answers = q.answer.map(a => normalizar(a));
-        isCorrect = JSON.stringify(items) === JSON.stringify(answers);
+        // 'val' es el array de textos que viene desde submitSort()
+        // Lo normalizamos para que no fallen las mayúsculas o espacios
+        const userNorm = val.map(v => normalizar(v)); 
+        const answersNorm = q.answer.map(a => normalizar(a));
+        
+        // Comparamos los dos arrays convertidos a texto
+        isCorrect = JSON.stringify(userNorm) === JSON.stringify(answersNorm);
     } else {
+        // Este 'else' es VITAL para que funcionen los otros juegos
         isCorrect = normalizar(val) === normalizar(q.answer);
     }
 
