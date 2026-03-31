@@ -12,7 +12,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        igator.serviceWorker.register('./sw.js')
+        navigator.serviceWorker.register('./sw.js')
           .then(reg => console.log('¡App de Aiti lista!', reg))
           .catch(err => console.log('Error en PWA:', err));
       });
@@ -1821,7 +1821,6 @@ function renderSortZone(q) {
 
 function checkAnswer(val) {
     const q = questionQueue[currentQIndex];
-    
     const normalizar = (t) => {
         let res = String(t).toLowerCase().trim();
         if (res === 'true') return 'verdadero';
@@ -1831,7 +1830,6 @@ function checkAnswer(val) {
 
     let isCorrect = false;
 
-    // --- BLOQUE DE CORRECCIÓN ---
     if (q.type === 'sort') {
         const userNorm = val.map(v => normalizar(v)); 
         const answersNorm = q.answer.map(a => normalizar(a));
@@ -1840,32 +1838,30 @@ function checkAnswer(val) {
         isCorrect = normalizar(val) === normalizar(q.answer);
     }
 
-    // --- MOSTRAR RESULTADO (FEEDBACK) ---
     const fb = document.getElementById('feedback-panel');
-    fb.style.display = 'block';
-    
-    if (isCorrect) {
-        fb.style.background = 'rgba(76,217,123,0.2)';
-        fb.textContent = '¡Excelente! 🌟 +10 monedas';
-        state.coins += 10;
-        document.getElementById('coins-display').textContent = state.coins; // Actualiza el contador visual
-        saveProgress();
-    } else {
-        fb.style.background = 'rgba(255,107,53,0.2)';
-        const respuestaVisible = Array.isArray(q.answer) ? q.answer.join(' → ') : q.answer;
-        fb.textContent = '¡Casi! Era: ' + respuestaVisible;
+    if (fb) {
+        fb.style.display = 'block';
+        if (isCorrect) {
+            fb.style.background = 'rgba(76,217,123,0.2)';
+            fb.textContent = '¡Excelente! 🌟 +10 monedas';
+            state.coins += 10;
+            const coinsDisp = document.getElementById('coins-display');
+            if (coinsDisp) coinsDisp.textContent = state.coins;
+            saveProgress();
+        } else {
+            fb.style.background = 'rgba(255,107,53,0.2)';
+            const resp = Array.isArray(q.answer) ? q.answer.join(' → ') : q.answer;
+            fb.textContent = '¡Casi! Era: ' + resp;
+        }
     }
 
-    // --- BLOQUEO DE CONTROLES ---
-    // Mostramos el botón de Siguiente
-    document.getElementById('next-btn').style.display = 'block';
+    const nextBtn = document.getElementById('next-btn');
+    if (nextBtn) nextBtn.style.display = 'block';
     
-    // Bloqueamos TODOS los botones de respuesta para que no pueda clicar de nuevo
     const controles = '.option-btn, .sort-item, #btn-true, #btn-false, #btn-fitb, #btn-sort, #fitb-input';
     document.querySelectorAll(controles).forEach(el => {
         el.disabled = true;
         el.style.opacity = "0.6";
-        el.style.cursor = "default";
     });
 }
 function nextQuestion() {
