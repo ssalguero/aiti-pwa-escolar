@@ -135,8 +135,14 @@
       </div>
       <div id="zone-mc" class="options-grid"></div>
       <div id="zone-tf" style="display:none; grid-template-columns: 1fr 1fr; gap:10px;">
-        <button id="btn-true" onclick="answerTF('true')" style="padding:20px; border-radius:15px; border:none; background:var(--card2); color:white; font-family:'Fredoka One'; font-size:1.2rem; cursor:pointer;">✅ VERDADERO</button>
-        <button id="btn-false" onclick="answerTF('false')" style="padding:20px; border-radius:15px; border:none; background:var(--card2); color:white; font-family:'Fredoka One'; font-size:1.2rem; cursor:pointer;">❌ FALSO</button>
+       <button id="btn-true" onclick="checkAnswer('verdadero')" 
+       style="padding:20px; border-radius:15px; border:none; background:var(--card2); color:white; font-family:'Fredoka One'; font-size:1.2rem; cursor:pointer;">
+        ✅ VERDADERO
+       </button>
+       <button id="btn-false" onclick="checkAnswer('falso')" 
+        style="padding:20px; border-radius:15px; border:none; background:var(--card2); color:white; font-family:'Fredoka One'; font-size:1.2rem; cursor:pointer;">
+        ❌ FALSO
+       </button>
       </div>
       <div id="zone-fitb" style="display:none;">
         <input type="text" id="fitb-input" style="width:100%; padding:15px; border-radius:10px; border:none; background:var(--card2); color:white; margin-bottom:10px;" placeholder="Escribí acá...">
