@@ -1756,8 +1756,25 @@ function renderQuestion() {
     } else if(q.type === 'true-false') {
         document.getElementById('zone-tf').style.display = 'grid';
     } else if(q.type === 'fill-in-the-blank') {
-        document.getElementById('zone-fitb').style.display = 'block';
-        document.getElementById('fitb-input').value = '';
+        const zoneFITB = document.getElementById('zone-fitb');
+        zoneFITB.style.display = 'block';
+        
+        const input = document.getElementById('fitb-input');
+        input.value = ''; // Limpiamos el texto anterior
+        input.disabled = false; // Lo habilitamos
+        
+        // --- OPCIONAL: Auto-enviar al presionar Enter ---
+        input.onkeyup = (e) => {
+            if (e.key === 'Enter') submitFITB();
+        };
+        
+        // Habilitamos el botón de enviar por si estaba bloqueado
+        const btnFITB = document.getElementById('btn-fitb');
+        if (btnFITB) {
+            btnFITB.disabled = false;
+            btnFITB.style.opacity = "1";
+        }
+    }
     } else if (q.type === 'sort') {
         renderSortZone(q);
     }
@@ -1778,7 +1795,16 @@ function answerTF(val) {
     // Esta función sirve de puente para los botones de Verdadero/Falso
     checkAnswer(val); 
 }
-
+function submitFITB() { 
+    const input = document.getElementById('fitb-input');
+    const val = input.value.trim(); // Leemos lo que escribió Aitana
+    
+    if (val !== "") {
+        checkAnswer(val); // Se lo pasamos al "juez" para que lo califique
+    } else {
+        alert("¡Escribí una respuesta antes de enviar! ✍️");
+    }
+}
 function renderSortZone(q) {
     const sortList = document.getElementById('sort-list');
     document.getElementById('zone-sort').style.display = 'block';
@@ -1795,6 +1821,7 @@ function renderSortZone(q) {
 
 function checkAnswer(val) {
     const q = questionQueue[currentQIndex];
+    
     const normalizar = (t) => {
         let res = String(t).toLowerCase().trim();
         if (res === 'true') return 'verdadero';
@@ -1803,38 +1830,44 @@ function checkAnswer(val) {
     };
 
     let isCorrect = false;
+
+    // --- BLOQUE DE CORRECCIÓN ---
     if (q.type === 'sort') {
-        // 'val' es el array de textos que viene desde submitSort()
-        // Lo normalizamos para que no fallen las mayúsculas o espacios
         const userNorm = val.map(v => normalizar(v)); 
         const answersNorm = q.answer.map(a => normalizar(a));
-        
-        // Comparamos los dos arrays convertidos a texto
         isCorrect = JSON.stringify(userNorm) === JSON.stringify(answersNorm);
     } else {
-        // Este 'else' es VITAL para que funcionen los otros juegos
         isCorrect = normalizar(val) === normalizar(q.answer);
     }
 
+    // --- MOSTRAR RESULTADO (FEEDBACK) ---
     const fb = document.getElementById('feedback-panel');
     fb.style.display = 'block';
+    
     if (isCorrect) {
         fb.style.background = 'rgba(76,217,123,0.2)';
         fb.textContent = '¡Excelente! 🌟 +10 monedas';
         state.coins += 10;
+        document.getElementById('coins-display').textContent = state.coins; // Actualiza el contador visual
         saveProgress();
     } else {
         fb.style.background = 'rgba(255,107,53,0.2)';
-        fb.textContent = '¡Casi! Era: ' + (Array.isArray(q.answer) ? q.answer.join(' → ') : q.answer);
+        const respuestaVisible = Array.isArray(q.answer) ? q.answer.join(' → ') : q.answer;
+        fb.textContent = '¡Casi! Era: ' + respuestaVisible;
     }
 
+    // --- BLOQUEO DE CONTROLES ---
+    // Mostramos el botón de Siguiente
     document.getElementById('next-btn').style.display = 'block';
-    document.querySelectorAll('.option-btn, .sort-item, .true-false-btn').forEach(b => {
-        b.disabled = true;
-        b.style.cursor = "default";
+    
+    // Bloqueamos TODOS los botones de respuesta para que no pueda clicar de nuevo
+    const controles = '.option-btn, .sort-item, #btn-true, #btn-false, #btn-fitb, #btn-sort, #fitb-input';
+    document.querySelectorAll(controles).forEach(el => {
+        el.disabled = true;
+        el.style.opacity = "0.6";
+        el.style.cursor = "default";
     });
 }
-
 function nextQuestion() {
     currentQIndex++;
     if(currentQIndex < questionQueue.length) renderQuestion();
