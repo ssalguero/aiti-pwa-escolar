@@ -12,7 +12,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
+        igator.serviceWorker.register('./sw.js')
           .then(reg => console.log('¡App de Aiti lista!', reg))
           .catch(err => console.log('Error en PWA:', err));
       });
@@ -160,22 +160,28 @@
       <button onclick="goHome()" style="width:100%; padding:15px; border-radius:10px; border:none; background:var(--rot); color:white; font-weight:800;">VOLVER AL INICIO</button>
     </div>
 
-	  <div class="screen" id="screen-profile-selector" style="text-align:center; justify-content:center; align-items:center; padding-top:60px;">
-  <div style="font-size: 5rem; margin-bottom: 10px;">🚀</div>
-  <h1 style="font-family:'Fredoka One'; margin-bottom:10px; font-size:2rem;">¡Hola, Explorador/a!</h1>
-  <p style="color:var(--muted); margin-bottom:30px;">Ingresá tu nombre para comenzar la misión</p>
-  
-  <div style="max-width:300px; margin: 0 auto;">
-    <input type="text" id="player-name-input" placeholder="Tu nombre aquí..." 
-           style="width:100%; padding:15px; border-radius:15px; border:2px solid var(--card2); background:var(--card); color:white; font-size:1.1rem; text-align:center; margin-bottom:15px; outline:none; font-family:'Nunito';">
+	 <div class="screen" id="screen-login" style="text-align:center; justify-content:center; align-items:center; padding-top:60px; flex-direction: column;">
+    <div style="font-size: 5rem; margin-bottom: 10px;">🚀</div>
+    <h1 style="font-family:'Fredoka One'; margin-bottom:10px; font-size:2rem;">¡Hola, Exploradora!</h1>
+    <p style="color:var(--muted); margin-bottom:20px;">Creá tu cuenta para guardar tus monedas</p>
     
-    <button onclick="loginExplorador()" 
-            style="width:100%; padding:16px; border-radius:15px; border:none; background:linear-gradient(135deg, var(--rot), var(--len)); color:white; font-family:'Fredoka One'; font-size:1.2rem; cursor:pointer; box-shadow: 0 4px 15px rgba(162,89,255,0.4);">
-      ¡DESPEGAR! 
-    </button>
-  </div>
+    <div style="max-width:300px; margin: 0 auto; width: 90%;">
+        <input type="text" id="reg-fullname" placeholder="Nombre completo" 
+               style="width:100%; padding:15px; border-radius:15px; border:2px solid var(--card2); background:var(--card); color:white; font-size:1rem; text-align:center; margin-bottom:10px; outline:none;">
+        
+        <input type="text" id="reg-username" placeholder="Usuario (Ej: Aiti2026)" 
+               style="width:100%; padding:15px; border-radius:15px; border:2px solid var(--card2); background:var(--card); color:white; font-size:1rem; text-align:center; margin-bottom:5px; outline:none;">
+        
+        <p id="login-error" style="color:#ff6b35; font-size:0.8rem; margin-bottom:15px; display:none; line-height: 1.2;"></p>
+        
+        <button onclick="crearPerfil()" 
+                style="width:100%; padding:16px; border-radius:15px; border:none; background:linear-gradient(135deg, var(--rot), var(--len)); color:white; font-family:'Fredoka One'; font-size:1.2rem; cursor:pointer; box-shadow: 0 4px 15px rgba(162,89,255,0.4);">
+            ¡DESPEGAR! 
+        </button>
+    </div>
 </div>
-
+<div class="screen" id="screen-profile" style="padding: 20px; text-align: center;">
+    </div>
     <nav class="bottom-nav">
       <button class="nav-btn active" onclick="navTo('home')">🏠<br>Inicio</button>
       <button class="nav-btn" onclick="navTo('profile')">👤<br>Perfil</button>
@@ -1820,6 +1826,7 @@ function finishLevel() {
 
 /* --- 5. INICIO AL CARGAR --- */
 window.onload = () => {
+	document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
     navTo('login'); // Cambiamos a la pantalla de login con inputs
 };
     
