@@ -11,12 +11,12 @@
   <link rel="manifest" href="manifest.json" />
   <script>
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
+    window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
-          .then(reg => console.log('¡App de Aiti lista!', reg))
-          .catch(err => console.log('Error en PWA:', err));
-      });
-    }
+            .then(reg => console.log('¡App de Aiti lista!', reg))
+            .catch(err => console.log('Error en PWA:', err));
+    });
+}
   </script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -1831,13 +1831,12 @@ function checkAnswer(val) {
     let isCorrect = false;
 
     if (q.type === 'sort') {
-        const userNorm = val.map(v => normalizar(v)); 
-        const answersNorm = q.answer.map(a => normalizar(a));
-        isCorrect = JSON.stringify(userNorm) === JSON.stringify(answersNorm);
-    } else {
-        isCorrect = normalizar(val) === normalizar(q.answer);
-    }
-
+    const items = Array.from(document.querySelectorAll('.sort-item')).map(i => normalizar(i.textContent));
+    const answers = q.answer.map(a => normalizar(a));
+    isCorrect = JSON.stringify(items) === JSON.stringify(answers);
+} else { 
+    isCorrect = normalizar(val) === normalizar(q.answer);
+}
     const fb = document.getElementById('feedback-panel');
     if (fb) {
         fb.style.display = 'block';
