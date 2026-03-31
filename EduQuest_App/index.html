@@ -187,19 +187,7 @@
     /* --- CONFIGURACIÓN SUPABASE --- */
     const SUPABASE_URL = 'https://abkxfzbbpqzdcvgknhyb.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFia3hmemJicHF6ZGN2Z2tuaHliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MzE1MDUsImV4cCI6MjA4OTAwNzUwNX0.g34kH1mphkSnJMDcwi6p5DfWjUAGcx__WtGv-A1-Obo';
-    
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);	
-
-    /* --- CONFIGURACIÓN Y ESTADO --- */
-
-let state = {
-    username: "",
-    fullName: "",
-    currentLevel: 1,
-    coins: 0,
-    lastQuestionIndex: 0,
-    resumeLevel: 1
-};
 
 // Configuración de materias
 const subjectMeta = {
@@ -208,20 +196,8 @@ const subjectMeta = {
     sociales: { label: "Sociales", icon: "🗺️", colorClass: "c-soc", bgClass: "bg-soc" },
     naturales: { label: "Naturales", icon: "🌿", colorClass: "c-nat", bgClass: "bg-nat" }
 };
-
 const subjectsOrder = ['matematica', 'lengua', 'sociales', 'naturales'];
 
-// Variables de control de flujo
-const subjectMeta = {
-    matematica: { label: "Matemática", icon: "🔢", colorClass: "c-mat", bgClass: "bg-mat" },
-    lengua: { label: "Lengua", icon: "📚", colorClass: "c-len", bgClass: "bg-len" },
-    sociales: { label: "Sociales", icon: "🗺️", colorClass: "c-soc", bgClass: "bg-soc" },
-    naturales: { label: "Naturales", icon: "🌿", colorClass: "c-nat", bgClass: "bg-nat" }
-};
-
-const subjectsOrder = ['matematica', 'lengua', 'sociales', 'naturales'];
-
-// Estado global de la aplicación
 let state = {
     username: "",
     fullName: "",
@@ -236,60 +212,6 @@ let currentIntroIndex = 0;
 let questionQueue = [];
 let currentQIndex = 0;
 
-/* --- 2. EL "GUARDIÁN" Y GESTIÓN DE USUARIO --- */
-function validarUsuario(user) {
-    return user.length >= 8 && /[A-Z]/.test(user) && /[a-z]/.test(user) && /[0-9]/.test(user);
-}
-
-function crearPerfil() {
-    const nameInput = document.getElementById('reg-fullname');
-    const userInput = document.getElementById('reg-username');
-    const errorMsg = document.getElementById('login-error');
-
-    const name = nameInput.value.trim();
-    const user = userInput.value.trim();
-
-    if (name === "" || user === "") {
-        mostrarErrorLogin("Completa ambos campos.");
-        return;
-    }
-
-    if (!validarUsuario(user)) {
-        mostrarErrorLogin("El usuario requiere 8+ caracteres, Mayúscula, Minúscula y Número.");
-        return;
-    }
-
-    // Cargar o Crear
-    const savedData = localStorage.getItem('eduAiti_' + user);
-    if (savedData) {
-        state = JSON.parse(savedData);
-    } else {
-        state.username = user;
-        state.fullName = name;
-        state.coins = 0;
-        state.completedLevels = [];
-        saveProgress();
-    }
-
-    // Actualizar UI y entrar
-    document.getElementById('coins-display').textContent = state.coins;
-    navTo('home');
-    renderLevels();
-}
-
-function mostrarErrorLogin(mensaje) {
-    const errorMsg = document.getElementById('login-error');
-    if (errorMsg) {
-        errorMsg.textContent = mensaje;
-        errorMsg.style.display = "block";
-    }
-}
-
-function saveProgress() {
-    if (state.username) {
-        localStorage.setItem('eduAiti_' + state.username, JSON.stringify(state));
-    }
-}
     /* --- CONTENIDO EDUCATIVO (NAP) --- */
 const napContent = {
 1: {
@@ -1565,6 +1487,106 @@ nivel31: {
     /* --- REEMPLAZO TOTAL DE LÓGICA --- */
 
     // 1. ESTADO INICIAL (Asegúrate de que incluya los nuevos campos)
+function navTo(screenId) {
+    document.body.classList.remove('in-game');
+    document.querySelectorAll('.screen').forEach(s => {
+        s.classList.remove('active');
+        s.style.display = 'none';
+    });
+
+    if (screenId === 'game' || screenId === 'intro') {
+        document.body.classList.add('in-game');
+    }
+
+    const target = document.getElementById('screen-' + screenId);
+    if (target) {
+        target.style.display = (screenId === 'profile-selector' || screenId === 'login') ? 'flex' : 'block';
+        setTimeout(() => target.classList.add('active'), 10);
+    }
+
+    // Control de la barra de navegación
+    const mainNav = document.querySelector('.bottom-nav');
+    if (mainNav) {
+        const hideNav = ['game', 'intro', 'profile-selector', 'login'].includes(screenId);
+        mainNav.style.display = hideNav ? 'none' : 'flex';
+    }
+
+    if (screenId === 'profile') updateProfileScreen();
+}
+
+function updateProfileScreen() {
+    const profileZone = document.getElementById('screen-profile');
+    if (!profileZone) return;
+    profileZone.innerHTML = `
+        <div class="profile-card">
+            <div class="avatar-circle">⭐</div>
+            <h2>${state.fullName}</h2>
+            <p>@${state.username}</p>
+            <div class="stats-grid">
+                <div class="stat-item"><strong>${state.coins}</strong><span>Monedas</span></div>
+                <div class="stat-item"><strong>${state.completedLevels.length}</strong><span>Niveles</span></div>
+            </div>
+            <button class="logout-btn" onclick="location.reload()">Cerrar Sesión</button>
+        </div>
+    `;
+}
+
+/* --- 4. LÓGICA DEL JUEGO --- */
+function validarUsuario(user) {
+    return user.length >= 8 && /[A-Z]/.test(user) && /[a-z]/.test(user) && /[0-9]/.test(user);
+}
+
+function crearPerfil() {
+    const nameInput = document.getElementById('reg-fullname');
+    const userInput = document.getElementById('reg-username');
+    const errorMsg = document.getElementById('login-error');
+
+    const name = nameInput.value.trim();
+    const user = userInput.value.trim();
+
+    if (name === "" || user === "") {
+        mostrarErrorLogin("Completa ambos campos.");
+        return;
+    }
+
+    if (!validarUsuario(user)) {
+        mostrarErrorLogin("El usuario requiere 8+ caracteres, Mayúscula, Minúscula y Número.");
+        return;
+    }
+
+    // Cargar o Crear
+    const savedData = localStorage.getItem('eduAiti_' + user);
+    if (savedData) {
+        state = JSON.parse(savedData);
+    } else {
+        state.username = user;
+        state.fullName = name;
+        state.coins = 0;
+        state.completedLevels = [];
+        saveProgress();
+    }
+
+    // Actualizar UI y entrar
+    document.getElementById('coins-display').textContent = state.coins;
+    navTo('home');
+    renderLevels();
+}
+
+function mostrarErrorLogin(mensaje) {
+    const errorMsg = document.getElementById('login-error');
+    if (errorMsg) {
+        errorMsg.textContent = mensaje;
+        errorMsg.style.display = "block";
+    }
+}
+
+function saveProgress() {
+    if (state.username) {
+        localStorage.setItem('eduAiti_' + state.username, JSON.stringify(state));
+    }
+}
+
+/* --- 3. NAVEGACIÓN --- */
 function navTo(screenId) {
     document.body.classList.remove('in-game');
     document.querySelectorAll('.screen').forEach(s => {
