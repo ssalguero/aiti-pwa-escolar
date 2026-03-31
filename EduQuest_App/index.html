@@ -57,7 +57,7 @@
     .logo { font-family: 'Fredoka One', cursive; font-size: 1.6rem; background: linear-gradient(135deg, #A259FF, #3ECFCF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
     .coins-badge { display: flex; align-items: center; gap: 6px; background: var(--card2); border: 2px solid var(--soc); border-radius: 50px; padding: 6px 14px; font-weight: 800; color: var(--soc); }
 
-    .screen { display: none; flex-direction: column; padding: 0 20px; flex: 1; animation: fadeIn .4s ease; }
+    .screen { display: none; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; width: 100% padding: 0 20px; flex: 1; animation: fadeIn .4s ease; }
     .screen.active { display: flex; }
     @keyframes fadeIn { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
 
@@ -167,7 +167,7 @@
       <button onclick="goHome()" style="width:100%; padding:15px; border-radius:10px; border:none; background:var(--rot); color:white; font-weight:800;">VOLVER AL INICIO</button>
     </div>
 
-	 <div class="screen" id="screen-login" style="text-align:center; justify-content:center; align-items:center; padding-top:60px; flex-direction: column;">
+<div class="screen" id="screen-login" style="text-align:center; justify-content:center; align-items:center; padding-top:60px; flex-direction: column; display: none;">
     <div style="font-size: 5rem; margin-bottom: 10px;">🚀</div>
     <h1 style="font-family:'Fredoka One'; margin-bottom:10px; font-size:2rem;">¡Hola, Exploradora!</h1>
     <p style="color:var(--muted); margin-bottom:20px;">Creá tu cuenta para guardar tus monedas</p>
@@ -178,7 +178,7 @@
         
         <input type="text" id="reg-username" placeholder="Usuario (Ej: Aiti2026)" 
                style="width:100%; padding:15px; border-radius:15px; border:2px solid var(--card2); background:var(--card); color:white; font-size:1rem; text-align:center; margin-bottom:5px; outline:none;">
-        
+
         <p id="login-error" style="color:#ff6b35; font-size:0.8rem; margin-bottom:15px; display:none; line-height: 1.2;"></p>
         
         <button onclick="crearPerfil()" 
@@ -1886,9 +1886,16 @@ function finishLevel() {
 }
 
 /* --- 5. INICIO AL CARGAR --- */
+// --- ESTO VA AL FINAL DEL TODO, DENTRO DEL <script> ---
 window.onload = () => {
-	document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
-    navTo('login'); // Cambiamos a la pantalla de login con inputs
+    // Primero ocultamos todo por seguridad
+    document.querySelectorAll('.screen').forEach(s => {
+        s.style.display = 'none';
+        s.classList.remove('active');
+    });
+
+    // Ahora llamamos a la pantalla de login
+    navTo('login'); 
 };
     
   </script>
