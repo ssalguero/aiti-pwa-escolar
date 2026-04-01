@@ -164,7 +164,10 @@
       <h1 id="result-title" style="font-family:'Fredoka One'; margin:10px 0;"></h1>
       <div id="result-score" style="font-size:3rem; font-family:'Fredoka One'; color:var(--soc);"></div>
       <p id="result-sub" style="margin-bottom:20px;"></p>
-      <button onclick="goHome()" style="width:100%; padding:15px; border-radius:10px; border:none; background:var(--rot); color:white; font-weight:800;">VOLVER AL INICIO</button>
+      <button onclick="navTo('home')" 
+            style="width:100%; padding:15px; border-radius:15px; border:none; background:var(--card2); color:white; font-family:'Fredoka One'; font-size:1.2rem; cursor:pointer;">
+        VOLVER AL INICIO 🏠
+    </button>
     </div>
 
 <div class="screen" id="screen-login" style="text-align:center; justify-content:center; align-items:center; padding-top:60px; flex-direction: column; display: none;">
@@ -1895,10 +1898,10 @@ function finishLevel() {
         state.completedLevels.push(state.currentLevel);
         saveProgress(); 
     }
+	renderLevels();
     navTo('results');
-    document.getElementById('result-title').textContent = '¡NIVEL COMPLETADO!';
+    document.getElementById('result-title').textContent = '¡MISIÓN CUMPLIDA!';
     document.getElementById('result-score').textContent = '🪙 ' + state.coins;
-    renderLevels();
 }
 
 /* --- 5. INICIO AL CARGAR --- */
