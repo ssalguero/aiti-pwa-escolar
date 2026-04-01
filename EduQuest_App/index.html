@@ -1822,31 +1822,52 @@ function submitFITB() {
     }
 }
 function renderSortZone(q) {
-    const sortList = document.getElementById('sort-list');
-	const btnSort = document.getElementById('btn-sort');
-    document.getElementById('zone-sort').style.display = 'block';
-	sortList.innerHTML = '';
-	if (sortList.sortable) {
-        sortList.sortable.destroy();
-    }
-	const shuffled = [...q.options].sort(() => Math.random() - 0.5);
+    // 1. Buscamos el contenedor original
+    const oldSortList = document.getElementById('sort-list');
+    const zoneSort = document.getElementById('zone-sort');
+    const btnSort = document.getElementById('btn-sort');
+
+    if (!oldSortList || !zoneSort) return;
+
+    // 2. TRUCO MAESTRO: Clonamos el div para eliminar eventos viejos
+    const newSortList = oldSortList.cloneNode(false); 
+    oldSortList.parentNode.replaceChild(newSortList, oldSortList);
+    
+    // Ahora trabajamos con 'newSortList' (que tiene el mismo ID 'sort-list')
+    zoneSort.style.display = 'block';
+    newSortList.innerHTML = ''; 
+
+    // 3. Creamos los items nuevos del Nivel 2
+    const shuffled = [...q.options].sort(() => Math.random() - 0.5);
     shuffled.forEach(text => {
         const item = document.createElement('div');
         item.className = 'sort-item';
         item.innerText = text;
-		item.style.cursor = 'grab';
-        sortList.appendChild(item);
+        newSortList.appendChild(item);
     });
-	if (btnSort) {
+
+    // 4. Desbloqueamos el botón
+    if (btnSort) {
         btnSort.disabled = false;
         btnSort.style.opacity = "1";
-        btnSort.style.cursor = "pointer";
         btnSort.textContent = "REVISAR ORDEN";
-		btnSort.style.display = "block";
-	}
-	sortList.sortable = new Sortable(sortList, { animation: 150, ghostClass: 'dragging', chosenClass: 'dragging', forceFallback: true, fallbackTolerance: 3 });
-}
+    }
 
+    // 5. Inicializamos Sortable desde cero en el nuevo elemento
+    setTimeout(() => {
+        newSortList.sortable = new Sortable(newSortList, {
+            animation: 150,
+            ghostClass: 'dragging',
+            chosenClass: 'dragging',
+            forceFallback: true,
+            fallbackTolerance: 3,
+            // Añadimos esto para asegurar que el guardado sea limpio
+            onEnd: function() {
+                console.log("Pieza soltada en nueva posición");
+            }
+        });
+    }, 50);
+}
 function checkAnswer(val) {
     const q = questionQueue[currentQIndex];
     const normalizar = (t) => {
