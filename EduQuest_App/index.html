@@ -1754,7 +1754,22 @@ function renderQuestion() {
             zone.appendChild(btn);
         });
     } else if(q.type === 'true-false') {
-        document.getElementById('zone-tf').style.display = 'grid';
+        const zoneTF = document.getElementById('zone-tf');
+        if (zoneTF) {
+            zoneTF.style.display = 'grid';
+            
+            // --- ESTO ES LO QUE FALTA: Desbloquear los botones ---
+            const btnT = document.getElementById('btn-true');
+            const btnF = document.getElementById('btn-false');
+            if (btnT && btnF) {
+                btnT.disabled = false;
+                btnF.disabled = false;
+                btnT.style.opacity = "1";
+                btnF.style.opacity = "1";
+                btnT.style.cursor = "pointer";
+                btnF.style.cursor = "pointer";
+            }
+        }
     } else if(q.type === 'fill-in-the-blank') {
         const zoneFITB = document.getElementById('zone-fitb');
         zoneFITB.style.display = 'block';
