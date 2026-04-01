@@ -1821,7 +1821,14 @@ function submitFITB() {
 }
 function renderSortZone(q) {
     const sortList = document.getElementById('sort-list');
+	const btnSort = document.getElementById('btn-sort');
     document.getElementById('zone-sort').style.display = 'block';
+	if (btnSort) {
+        btnSort.disabled = false;
+        btnSort.style.opacity = "1";
+        btnSort.style.cursor = "pointer";
+        btnSort.textContent = "REVISAR ORDEN";
+	}
     sortList.innerHTML = '';
     const shuffled = [...q.options].sort(() => Math.random() - 0.5);
     shuffled.forEach(text => {
