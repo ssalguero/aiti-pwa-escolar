@@ -84,9 +84,8 @@
 /* Solo mostramos el cursor de "no permitido" cuando el botón está deshabilitado de verdad */
      button:disabled {
      cursor: not-allowed !important; }
-	.sort-item { background: var(--card2); border: 2px solid var(--rot); border-radius: 12px; padding: 14px; margin-bottom: 8px; font-family: 'Fredoka One'; cursor: grab; }
-
-	.sort-item.dragging { opacity: 0.9 !important; background: var(--rot) !important; border: 2px solid white !important; transform: scale(1.05); box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+	.sort-item { background: var(--card); padding: 15px; margin: 10px 0; border-radius: 12px; border: 2px solid var(--card2); cursor: grab; user-select: none; }
+	.sort-item.dragging { opacity: 0.9 !important; background: var(--rot) !important; border: 2px solid white !important; transform: scale(1.05); box-shadow: 0 10px 20px rgba(0,0,0,0.5); z-index: 1000; }
 	  
     .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: rgba(15,10,42,0.95); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid var(--card2); z-index: 100; }    
 	 body.in-game .bottom-nav { display: none !important; }
@@ -1826,21 +1825,26 @@ function renderSortZone(q) {
     const sortList = document.getElementById('sort-list');
 	const btnSort = document.getElementById('btn-sort');
     document.getElementById('zone-sort').style.display = 'block';
+	sortList.innerHTML = '';
+	if (sortList.sortable) {
+        sortList.sortable.destroy();
+    }
+	const shuffled = [...q.options].sort(() => Math.random() - 0.5);
+    shuffled.forEach(text => {
+        const item = document.createElement('div');
+        item.className = 'sort-item';
+        item.innerText = text;
+		item.style.cursor = 'grab';
+        sortList.appendChild(item);
+    });
 	if (btnSort) {
         btnSort.disabled = false;
         btnSort.style.opacity = "1";
         btnSort.style.cursor = "pointer";
         btnSort.textContent = "REVISAR ORDEN";
+		btnSort.style.display = "block";
 	}
-    sortList.innerHTML = '';
-    const shuffled = [...q.options].sort(() => Math.random() - 0.5);
-    shuffled.forEach(text => {
-        const item = document.createElement('div');
-        item.className = 'sort-item';
-        item.innerText = text;
-        sortList.appendChild(item);
-    });
-    new Sortable(sortList, { animation: 150, ghostClass: 'dragging', forceFallback: true });
+	sortList.sortable = new Sortable(sortList, { animation: 150, ghostClass: 'dragging', chosenClass: 'dragging', forceFallback: true, fallbackTolerance: 3 });
 }
 
 function checkAnswer(val) {
